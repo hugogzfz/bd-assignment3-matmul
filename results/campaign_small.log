@@ -1,0 +1,32 @@
+mkdir -p build
+clang -O2 -std=c11 -ffp-contract=off -Wall -Wextra -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include -L/usr/local/opt/libomp/lib -lomp -o build/matmul3 src/c/matmul3.c
+.venv/bin/python scripts/gen_inputs.py 16 32 64 100 250 500 1000 1500 2000 3000 4000
+dense n=16 done
+dense n=32 done
+dense n=64 done
+dense n=100 done
+dense n=250 done
+dense n=500 done
+dense n=1000 done
+dense n=1500 done
+dense n=2000 done
+dense n=3000 done
+dense n=4000 done
+inputs: 22 verified identical to manifest, 0 newly recorded, 0 DIFFERENT
+.venv/bin/python scripts/run_benchmarks.py --campaign small --resume
+seq    sse2     bs=96  n=16    p=1  ok       median=1.471e-06 s  correct=pass bitwise=True  speed_limit=100->100  (4 s elapsed)
+omp    sse2     bs=96  n=16    p=2  ok       median=2.113e-06 s  correct=pass bitwise=True  speed_limit=100->100  (10 s elapsed)
+omp    sse2     bs=96  n=16    p=4  ok       median=2.766e-06 s  correct=pass bitwise=True  speed_limit=100->100  (15 s elapsed)
+omp    sse2     bs=96  n=16    p=1  ok       median=1.798e-06 s  correct=pass bitwise=True  speed_limit=100->100  (20 s elapsed)
+omp    sse2     bs=96  n=16    p=8  ok       median=3.648e-06 s  correct=pass bitwise=True  speed_limit=100->100  (26 s elapsed)
+seq    sse2     bs=96  n=32    p=1  ok       median=9.578e-06 s  correct=pass bitwise=True  speed_limit=100->100  (30 s elapsed)
+omp    sse2     bs=96  n=32    p=1  ok       median=1.003e-05 s  correct=pass bitwise=True  speed_limit=100->100  (35 s elapsed)
+omp    sse2     bs=96  n=32    p=4  ok       median=3.74e-06 s  correct=pass bitwise=True  speed_limit=100->100  (38 s elapsed)
+omp    sse2     bs=96  n=32    p=2  ok       median=5.63e-06 s  correct=pass bitwise=True  speed_limit=100->100  (42 s elapsed)
+omp    sse2     bs=96  n=32    p=8  ok       median=4.648e-06 s  correct=pass bitwise=True  speed_limit=100->100  (45 s elapsed)
+seq    sse2     bs=96  n=64    p=1  ok       median=6.959e-05 s  correct=pass bitwise=True  speed_limit=100->100  (49 s elapsed)
+omp    sse2     bs=96  n=64    p=4  ok       median=2.36e-05 s  correct=pass bitwise=True  speed_limit=100->100  (53 s elapsed)
+omp    sse2     bs=96  n=64    p=1  ok       median=6.978e-05 s  correct=pass bitwise=True  speed_limit=100->100  (57 s elapsed)
+omp    sse2     bs=96  n=64    p=2  ok       median=3.717e-05 s  correct=pass bitwise=True  speed_limit=100->100  (61 s elapsed)
+omp    sse2     bs=96  n=64    p=8  ok       median=2.672e-05 s  correct=pass bitwise=True  speed_limit=100->100  (64 s elapsed)
+campaign small finished in 1.1 min
