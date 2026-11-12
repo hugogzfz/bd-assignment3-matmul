@@ -1,0 +1,4 @@
+build,flags,kernel_remark,kernel_instructions,packed_mul,packed_add,scalar_mul,scalar_add,ymm_operands,xmm_operands,fma
+scalar,-fno-vectorize -fno-slp-vectorize,loop not vectorized [-Rpass-missed=loop-vectorize],133,0,0,1,1,0,5,0
+sse2,(default -O2),"vectorized loop (vectorization width: 2, interleaved count: 2) [-Rpass=loop-vectorize]",252,6,6,1,1,0,36,0
+avx2,-mavx2,"vectorized loop (vectorization width: 4, interleaved count: 4) [-Rpass=loop-vectorize]",205,4,4,1,1,13,5,0

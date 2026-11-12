@@ -1,0 +1,27 @@
+== scalar -fno-vectorize -fno-slp-vectorize
+src/c/matmul3.c:63:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:132:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:164:9: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:180:13: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:63:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:101:25: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:77:13: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+
+== sse2 
+src/c/matmul3.c:63:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:132:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:164:9: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:180:13: remark: the cost-model indicates that vectorization is not beneficial [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:180:13: remark: the cost-model indicates that interleaving is not beneficial [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:63:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:101:25: remark: vectorized loop (vectorization width: 2, interleaved count: 2) [-Rpass=loop-vectorize]
+src/c/matmul3.c:77:13: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+
+== avx2 -mavx2
+src/c/matmul3.c:63:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:132:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:164:9: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:180:13: remark: vectorized loop (vectorization width: 4, interleaved count: 4) [-Rpass=loop-vectorize]
+src/c/matmul3.c:63:5: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
+src/c/matmul3.c:101:25: remark: vectorized loop (vectorization width: 4, interleaved count: 4) [-Rpass=loop-vectorize]
+src/c/matmul3.c:77:13: remark: loop not vectorized [-Rpass-missed=loop-vectorize]
