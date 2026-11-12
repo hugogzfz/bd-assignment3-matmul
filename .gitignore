@@ -21,3 +21,4 @@ report/*.fdb_latexmk
 report/report.pdf
 dist/
 results_pilot/
+docs/guia_defensa.md

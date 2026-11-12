@@ -24,7 +24,6 @@ scripts/vec_evidence.py       vectorisation evidence (compiler remarks + disasse
 results/                      raw_measurements.csv (every sample), runs.csv (one row per process), campaign.log, summaries
 figures/, report/             figures and LaTeX sources of the report
 data/manifest.json            SHA-256 of every input (the matrices themselves are regenerated, not stored)
-docs/guia_defensa.md          short oral-defence guide (Spanish)
 ```
 
 ## 2. Reused material
