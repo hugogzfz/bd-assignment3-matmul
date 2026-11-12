@@ -1,0 +1,47 @@
+{
+  "cpu_model": "Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz",
+  "architecture": "x86_64",
+  "physical_cores": 4,
+  "logical_processors": 8,
+  "threads_per_core": 2,
+  "packages": 1,
+  "cpu_nominal_frequency_hz": 2700000000,
+  "cache_line_bytes": 64,
+  "cache_L1d_bytes": 32768,
+  "cache_L1i_bytes": 32768,
+  "cache_L2_bytes_per_core": 262144,
+  "cache_L3_bytes_shared": 8388608,
+  "cpu_features_of_interest": [
+    "SSE2",
+    "SSE4.2",
+    "AVX1.0",
+    "AVX2",
+    "FMA"
+  ],
+  "ram_bytes": 17179869184,
+  "model_identifier": "MacBookPro13,3",
+  "os": "macOS 12.7.6 (21H1320)",
+  "kernel": "21.6.0",
+  "power_source": "Now drawing from 'AC Power'",
+  "thermal_state_at_record": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\n2026-11-12 19:47:58 +0000 CPU Power notify\n\tCPU_Scheduler_Limit \t= 100\n\tCPU_Available_CPUs \t= 8\n\tCPU_Speed_Limit \t= 100",
+  "cpu_affinity_used": "none: macOS offers no thread pinning API (THREAD_AFFINITY_POLICY is only a hint); OMP_PROC_BIND / OMP_PLACES are not set and would not be honoured",
+  "compiler": "Apple clang version 14.0.0 (clang-1400.0.29.202)",
+  "libomp": {
+    "prefix": "/usr/local/opt/libomp",
+    "version": "libomp 23.1.5"
+  },
+  "c_flags_primary": "-O2 -std=c11 -ffp-contract=off -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include -L/usr/local/opt/libomp/lib -lomp (no -march=native, no -ffast-math)",
+  "openmp_runtime_settings": {
+    "OMP_NUM_THREADS": "set to p for every run",
+    "OMP_DYNAMIC": "false",
+    "OMP_PROC_BIND/OMP_PLACES": "unset",
+    "OMP_WAIT_POLICY/KMP_BLOCKTIME": "libomp defaults"
+  },
+  "python": {
+    "version": "3.12.7",
+    "numpy": "2.4.2",
+    "pandas": "3.0.0",
+    "matplotlib": "3.10.8"
+  },
+  "note_threads": "The C kernels use no numerical library. NumPy (validation only, never timed) runs with OPENBLAS_NUM_THREADS=1 in the benchmark driver. The benchmark program reports the OpenMP team size and the number of OS threads of the process."
+}

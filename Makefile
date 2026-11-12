@@ -12,7 +12,7 @@ SIZES    := 100 250 500 1000 1500 2000 3000 4000
 
 .PHONY: all venv build build-vec inputs test env bench-quick pilot bench analyze vecinfo report clean
 
-all: build inputs test bench analyze report
+all: build inputs test bench vecinfo analyze report
 
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -58,11 +58,14 @@ bench: build inputs test env
 	$(PY) scripts/run_benchmarks.py --campaign bsweep --resume
 	$(PY) scripts/run_benchmarks.py --campaign vec --resume
 
+vecinfo: build-vec
+	$(PY) scripts/vec_evidence.py
+
 analyze:
 	$(PY) scripts/analyze.py
 
 report:
-	cd report && latexmk -pdf -interaction=nonstopmode report.tex
+	cd report && PATH=/Library/TeX/texbin:$$PATH latexmk -pdf -interaction=nonstopmode report.tex
 
 clean:
 	rm -rf build results_quick results_pilot

@@ -1,0 +1,146 @@
+mkdir -p build
+clang -O2 -std=c11 -ffp-contract=off -Wall -Wextra -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include -L/usr/local/opt/libomp/lib -lomp -o build/matmul3 src/c/matmul3.c
+.venv/bin/python scripts/gen_inputs.py 100 250 500 1000 1500 2000 3000 4000
+dense n=100 done
+dense n=250 done
+dense n=500 done
+dense n=1000 done
+dense n=1500 done
+dense n=2000 done
+dense n=3000 done
+dense n=4000 done
+inputs: 16 verified identical to manifest, 0 newly recorded, 0 DIFFERENT
+mkdir -p build/vec
+clang -O2 -std=c11 -ffp-contract=off -Wall -Wextra -fno-vectorize -fno-slp-vectorize -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include -L/usr/local/opt/libomp/lib -lomp -o build/vec/matmul3_scalar src/c/matmul3.c
+clang -O2 -std=c11 -ffp-contract=off -Wall -Wextra -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include -L/usr/local/opt/libomp/lib -lomp -o build/vec/matmul3_sse2 src/c/matmul3.c
+clang -O2 -std=c11 -ffp-contract=off -Wall -Wextra -mavx2 -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include -L/usr/local/opt/libomp/lib -lomp -o build/vec/matmul3_avx2 src/c/matmul3.c
+.venv/bin/python scripts/test_correctness.py
+351 checks, 0 failed -> results/correctness_tests.csv
+for v in scalar sse2 avx2; do MATMUL_EXE=build/vec/matmul3_$v TEST_CSV=results/correctness_tests_$v.csv .venv/bin/python scripts/test_correctness.py || exit 1; done
+351 checks, 0 failed -> results/correctness_tests_scalar.csv
+351 checks, 0 failed -> results/correctness_tests_sse2.csv
+351 checks, 0 failed -> results/correctness_tests_avx2.csv
+.venv/bin/python scripts/env_info.py > /dev/null
+.venv/bin/python scripts/run_benchmarks.py --campaign main  --resume
+seq    sse2     bs=96  n=100   p=1  ok       median=0.0003144 s  correct=pass bitwise=True  speed_limit=100->100  (4 s elapsed)
+omp    sse2     bs=96  n=100   p=3  ok       median=0.0001053 s  correct=pass bitwise=True  speed_limit=100->100  (8 s elapsed)
+omp    sse2     bs=96  n=100   p=1  ok       median=0.0002953 s  correct=pass bitwise=True  speed_limit=100->100  (12 s elapsed)
+omp    sse2     bs=96  n=100   p=6  ok       median=9.574e-05 s  correct=pass bitwise=True  speed_limit=100->100  (15 s elapsed)
+omp    sse2     bs=96  n=100   p=8  ok       median=8.634e-05 s  correct=pass bitwise=True  speed_limit=100->100  (19 s elapsed)
+omp    sse2     bs=96  n=100   p=16 ok       median=0.0001175 s  correct=pass bitwise=True  speed_limit=100->100  (22 s elapsed)
+omp    sse2     bs=96  n=100   p=2  ok       median=0.0001508 s  correct=pass bitwise=True  speed_limit=100->100  (26 s elapsed)
+omp    sse2     bs=96  n=100   p=4  ok       median=8.878e-05 s  correct=pass bitwise=True  speed_limit=100->100  (29 s elapsed)
+seq    sse2     bs=96  n=250   p=1  ok       median=0.004726 s  correct=pass bitwise=True  speed_limit=100->100  (33 s elapsed)
+omp    sse2     bs=96  n=250   p=3  ok       median=0.001636 s  correct=pass bitwise=True  speed_limit=100->100  (37 s elapsed)
+omp    sse2     bs=96  n=250   p=6  ok       median=0.001453 s  correct=pass bitwise=True  speed_limit=100->100  (40 s elapsed)
+omp    sse2     bs=96  n=250   p=4  ok       median=0.001326 s  correct=pass bitwise=True  speed_limit=100->100  (44 s elapsed)
+omp    sse2     bs=96  n=250   p=8  ok       median=0.00156 s  correct=pass bitwise=True  speed_limit=100->100  (47 s elapsed)
+omp    sse2     bs=96  n=250   p=1  ok       median=0.004718 s  correct=pass bitwise=True  speed_limit=100->100  (51 s elapsed)
+omp    sse2     bs=96  n=250   p=2  ok       median=0.002483 s  correct=pass bitwise=True  speed_limit=100->100  (55 s elapsed)
+omp    sse2     bs=96  n=250   p=16 ok       median=0.001193 s  correct=pass bitwise=True  speed_limit=100->100  (58 s elapsed)
+seq    sse2     bs=96  n=500   p=1  ok       median=0.03999 s  correct=pass bitwise=True  speed_limit=100->100  (63 s elapsed)
+omp    sse2     bs=96  n=500   p=8  ok       median=0.0105 s  correct=pass bitwise=True  speed_limit=100->100  (66 s elapsed)
+omp    sse2     bs=96  n=500   p=6  ok       median=0.01158 s  correct=pass bitwise=True  speed_limit=100->100  (69 s elapsed)
+omp    sse2     bs=96  n=500   p=16 ok       median=0.01034 s  correct=pass bitwise=True  speed_limit=100->100  (73 s elapsed)
+omp    sse2     bs=96  n=500   p=4  ok       median=0.0106 s  correct=pass bitwise=True  speed_limit=100->100  (76 s elapsed)
+omp    sse2     bs=96  n=500   p=3  ok       median=0.01354 s  correct=pass bitwise=True  speed_limit=100->100  (80 s elapsed)
+omp    sse2     bs=96  n=500   p=1  ok       median=0.03974 s  correct=pass bitwise=True  speed_limit=100->100  (84 s elapsed)
+omp    sse2     bs=96  n=500   p=2  ok       median=0.01992 s  correct=pass bitwise=True  speed_limit=100->100  (88 s elapsed)
+seq    sse2     bs=96  n=1000  p=1  ok       median=0.3198 s  correct=pass bitwise=True  speed_limit=100->100  (93 s elapsed)
+omp    sse2     bs=96  n=1000  p=8  ok       median=0.08143 s  correct=pass bitwise=True  speed_limit=100->100  (97 s elapsed)
+omp    sse2     bs=96  n=1000  p=1  ok       median=0.3194 s  correct=pass bitwise=True  speed_limit=100->100  (102 s elapsed)
+omp    sse2     bs=96  n=1000  p=16 ok       median=0.08479 s  correct=pass bitwise=True  speed_limit=100->100  (105 s elapsed)
+omp    sse2     bs=96  n=1000  p=2  ok       median=0.1637 s  correct=pass bitwise=True  speed_limit=100->100  (110 s elapsed)
+omp    sse2     bs=96  n=1000  p=3  ok       median=0.1075 s  correct=pass bitwise=True  speed_limit=100->100  (113 s elapsed)
+omp    sse2     bs=96  n=1000  p=6  ok       median=0.09011 s  correct=pass bitwise=True  speed_limit=100->100  (117 s elapsed)
+omp    sse2     bs=96  n=1000  p=4  ok       median=0.08599 s  correct=pass bitwise=True  speed_limit=100->100  (121 s elapsed)
+seq    sse2     bs=96  n=1500  p=1  ok       median=1.176 s  correct=pass bitwise=True  speed_limit=100->100  (131 s elapsed)
+omp    sse2     bs=96  n=1500  p=3  ok       median=0.3707 s  correct=pass bitwise=True  speed_limit=100->100  (137 s elapsed)
+omp    sse2     bs=96  n=1500  p=4  ok       median=0.298 s  correct=pass bitwise=True  speed_limit=100->100  (142 s elapsed)
+omp    sse2     bs=96  n=1500  p=6  ok       median=0.2977 s  correct=pass bitwise=True  speed_limit=100->100  (147 s elapsed)
+omp    sse2     bs=96  n=1500  p=16 ok       median=0.2823 s  correct=pass bitwise=True  speed_limit=100->100  (152 s elapsed)
+omp    sse2     bs=96  n=1500  p=1  ok       median=1.099 s  correct=pass bitwise=True  speed_limit=100->100  (162 s elapsed)
+omp    sse2     bs=96  n=1500  p=8  ok       median=0.2806 s  correct=pass bitwise=True  speed_limit=100->100  (167 s elapsed)
+omp    sse2     bs=96  n=1500  p=2  ok       median=0.5532 s  correct=pass bitwise=True  speed_limit=100->100  (174 s elapsed)
+seq    sse2     bs=96  n=2000  p=1  ok       median=2.64 s  correct=pass bitwise=True  speed_limit=100->100  (194 s elapsed)
+omp    sse2     bs=96  n=2000  p=16 ok       median=0.7819 s  correct=pass bitwise=True  speed_limit=100->100  (202 s elapsed)
+omp    sse2     bs=96  n=2000  p=3  ok       median=0.9325 s  correct=pass bitwise=True  speed_limit=100->100  (211 s elapsed)
+omp    sse2     bs=96  n=2000  p=8  ok       median=0.7438 s  correct=pass bitwise=True  speed_limit=100->100  (219 s elapsed)
+omp    sse2     bs=96  n=2000  p=1  ok       median=2.684 s  correct=pass bitwise=True  speed_limit=100->100  (239 s elapsed)
+omp    sse2     bs=96  n=2000  p=2  ok       median=1.411 s  correct=pass bitwise=True  speed_limit=100->100  (251 s elapsed)
+omp    sse2     bs=96  n=2000  p=6  ok       median=0.7286 s  correct=pass bitwise=True  speed_limit=100->100  (259 s elapsed)
+omp    sse2     bs=96  n=2000  p=4  ok       median=0.7551 s  correct=pass bitwise=True  speed_limit=100->100  (267 s elapsed)
+seq    sse2     bs=96  n=3000  p=1  ok       median=8.575 s  correct=pass bitwise=True  speed_limit=100->100  (323 s elapsed)
+omp    sse2     bs=96  n=3000  p=3  ok       median=3.05 s  correct=pass bitwise=True  speed_limit=100->100  (345 s elapsed)
+omp    sse2     bs=96  n=3000  p=8  ok       median=2.414 s  correct=pass bitwise=True  speed_limit=100->100  (363 s elapsed)
+omp    sse2     bs=96  n=3000  p=1  ok       median=8.319 s  correct=pass bitwise=True  speed_limit=100->100  (417 s elapsed)
+omp    sse2     bs=96  n=3000  p=16 ok       median=2.301 s  correct=pass bitwise=True  speed_limit=100->100  (435 s elapsed)
+omp    sse2     bs=96  n=3000  p=6  ok       median=2.448 s  correct=pass bitwise=True  speed_limit=100->100  (453 s elapsed)
+omp    sse2     bs=96  n=3000  p=2  ok       median=4.317 s  correct=pass bitwise=True  speed_limit=100->100  (483 s elapsed)
+omp    sse2     bs=96  n=3000  p=4  ok       median=2.391 s  correct=pass bitwise=True  speed_limit=100->100  (501 s elapsed)
+campaign main finished in 8.3 min
+.venv/bin/python scripts/run_benchmarks.py --campaign large --resume
+seq    sse2     bs=96  n=4000  p=1  ok       median=19.55 s  correct=pass bitwise=True  speed_limit=100->100  (86 s elapsed)
+omp    sse2     bs=96  n=4000  p=1  ok       median=19.46 s  correct=pass bitwise=True  speed_limit=100->100  (168 s elapsed)
+omp    sse2     bs=96  n=4000  p=4  ok       median=5.754 s  correct=pass bitwise=True  speed_limit=100->100  (195 s elapsed)
+omp    sse2     bs=96  n=4000  p=8  ok       median=5.555 s  correct=pass bitwise=True  speed_limit=100->100  (222 s elapsed)
+campaign large finished in 3.7 min
+.venv/bin/python scripts/run_benchmarks.py --campaign ijk   --resume
+ijk    sse2     bs=96  n=500   p=1  ok       median=0.1397 s  correct=pass bitwise=True  speed_limit=100->100  (7 s elapsed)
+ijk    sse2     bs=96  n=1000  p=1  ok       median=1.859 s  correct=pass bitwise=True  speed_limit=100->100  (22 s elapsed)
+campaign ijk finished in 0.4 min
+.venv/bin/python scripts/run_benchmarks.py --campaign pass2 --resume
+omp    sse2     bs=96  n=2000  p=3  ok       median=0.845 s  correct=pass bitwise=True  speed_limit=100->100  (9 s elapsed)
+seq    sse2     bs=96  n=2000  p=1  ok       median=2.418 s  correct=pass bitwise=True  speed_limit=100->100  (27 s elapsed)
+omp    sse2     bs=96  n=2000  p=8  ok       median=0.6403 s  correct=pass bitwise=True  speed_limit=100->100  (34 s elapsed)
+omp    sse2     bs=96  n=2000  p=1  ok       median=2.378 s  correct=pass bitwise=True  speed_limit=100->100  (52 s elapsed)
+omp    sse2     bs=96  n=2000  p=16 ok       median=0.6468 s  correct=pass bitwise=True  speed_limit=100->100  (59 s elapsed)
+omp    sse2     bs=96  n=2000  p=6  ok       median=0.708 s  correct=pass bitwise=True  speed_limit=100->100  (67 s elapsed)
+omp    sse2     bs=96  n=2000  p=2  ok       median=1.246 s  correct=pass bitwise=True  speed_limit=100->100  (78 s elapsed)
+omp    sse2     bs=96  n=2000  p=4  ok       median=0.6748 s  correct=pass bitwise=True  speed_limit=100->100  (85 s elapsed)
+campaign pass2 finished in 1.4 min
+.venv/bin/python scripts/run_benchmarks.py --campaign bsweep --resume
+seq    sse2     bs=32  n=2000  p=1  ok       median=2.405 s  correct=pass bitwise=True  speed_limit=100->100  (18 s elapsed)
+omp    sse2     bs=32  n=2000  p=4  ok       median=0.6276 s  correct=pass bitwise=True  speed_limit=100->100  (25 s elapsed)
+omp    sse2     bs=64  n=2000  p=4  ok       median=0.6383 s  correct=pass bitwise=True  speed_limit=100->100  (33 s elapsed)
+omp    sse2     bs=128 n=2000  p=4  ok       median=0.6859 s  correct=pass bitwise=True  speed_limit=100->100  (40 s elapsed)
+seq    sse2     bs=192 n=2000  p=1  ok       median=2.602 s  correct=pass bitwise=True  speed_limit=100->100  (59 s elapsed)
+omp    sse2     bs=96  n=2000  p=4  ok       median=0.6596 s  correct=pass bitwise=True  speed_limit=100->100  (67 s elapsed)
+seq    sse2     bs=128 n=2000  p=1  ok       median=2.457 s  correct=pass bitwise=True  speed_limit=100->100  (85 s elapsed)
+seq    sse2     bs=64  n=2000  p=1  ok       median=2.261 s  correct=pass bitwise=True  speed_limit=100->100  (102 s elapsed)
+omp    sse2     bs=192 n=2000  p=4  ok       median=0.7104 s  correct=pass bitwise=True  speed_limit=100->100  (109 s elapsed)
+seq    sse2     bs=96  n=2000  p=1  ok       median=2.544 s  correct=pass bitwise=True  speed_limit=100->100  (128 s elapsed)
+campaign bsweep finished in 2.1 min
+.venv/bin/python scripts/run_benchmarks.py --campaign vec --resume
+omp    sse2-vec bs=96  n=1000  p=4  ok       median=0.08158 s  correct=pass bitwise=True  speed_limit=100->100  (4 s elapsed)
+omp    sse2-vec bs=96  n=1000  p=1  ok       median=0.3059 s  correct=pass bitwise=True  speed_limit=100->100  (9 s elapsed)
+omp    avx2     bs=96  n=1000  p=4  ok       median=0.04619 s  correct=pass bitwise=True  speed_limit=100->100  (12 s elapsed)
+seq    avx2     bs=96  n=1000  p=1  ok       median=0.1646 s  correct=pass bitwise=True  speed_limit=100->100  (16 s elapsed)
+omp    scalar   bs=96  n=1000  p=2  ok       median=0.3707 s  correct=pass bitwise=True  speed_limit=100->100  (22 s elapsed)
+omp    sse2-vec bs=96  n=1000  p=8  ok       median=0.08017 s  correct=pass bitwise=True  speed_limit=100->100  (25 s elapsed)
+omp    scalar   bs=96  n=1000  p=4  ok       median=0.2348 s  correct=pass bitwise=True  speed_limit=100->100  (30 s elapsed)
+seq    scalar   bs=96  n=1000  p=1  ok       median=0.7263 s  correct=pass bitwise=True  speed_limit=100->100  (37 s elapsed)
+seq    sse2-vec bs=96  n=1000  p=1  ok       median=0.3172 s  correct=pass bitwise=True  speed_limit=100->100  (42 s elapsed)
+omp    scalar   bs=96  n=1000  p=1  ok       median=0.7143 s  correct=pass bitwise=True  speed_limit=100->100  (50 s elapsed)
+omp    sse2-vec bs=96  n=1000  p=2  ok       median=0.1608 s  correct=pass bitwise=True  speed_limit=100->100  (54 s elapsed)
+omp    avx2     bs=96  n=1000  p=1  ok       median=0.1681 s  correct=pass bitwise=True  speed_limit=100->100  (58 s elapsed)
+omp    scalar   bs=96  n=1000  p=8  ok       median=0.1915 s  correct=pass bitwise=True  speed_limit=100->100  (62 s elapsed)
+omp    avx2     bs=96  n=1000  p=2  ok       median=0.08481 s  correct=pass bitwise=True  speed_limit=100->100  (66 s elapsed)
+omp    avx2     bs=96  n=1000  p=8  ok       median=0.0486 s  correct=pass bitwise=True  speed_limit=100->100  (69 s elapsed)
+omp    sse2-vec bs=96  n=2000  p=8  ok       median=0.6795 s  correct=pass bitwise=True  speed_limit=100->100  (77 s elapsed)
+omp    scalar   bs=96  n=2000  p=1  ok       median=5.453 s  correct=pass bitwise=True  speed_limit=100->100  (113 s elapsed)
+omp    sse2-vec bs=96  n=2000  p=1  ok       median=2.439 s  correct=pass bitwise=True  speed_limit=100->100  (131 s elapsed)
+omp    scalar   bs=96  n=2000  p=4  ok       median=1.523 s  correct=pass bitwise=True  speed_limit=100->100  (144 s elapsed)
+seq    sse2-vec bs=96  n=2000  p=1  ok       median=2.416 s  correct=pass bitwise=True  speed_limit=100->100  (162 s elapsed)
+omp    sse2-vec bs=96  n=2000  p=2  ok       median=1.251 s  correct=pass bitwise=True  speed_limit=100->100  (173 s elapsed)
+seq    scalar   bs=96  n=2000  p=1  ok       median=5.418 s  correct=pass bitwise=True  speed_limit=100->100  (209 s elapsed)
+omp    sse2-vec bs=96  n=2000  p=4  ok       median=0.6687 s  correct=pass bitwise=True  speed_limit=100->100  (216 s elapsed)
+omp    avx2     bs=96  n=2000  p=1  ok       median=1.234 s  correct=pass bitwise=True  speed_limit=100->100  (227 s elapsed)
+omp    scalar   bs=96  n=2000  p=2  ok       median=2.828 s  correct=pass bitwise=True  speed_limit=100->100  (248 s elapsed)
+omp    avx2     bs=96  n=2000  p=2  ok       median=0.6464 s  correct=pass bitwise=True  speed_limit=100->100  (255 s elapsed)
+omp    avx2     bs=96  n=2000  p=4  ok       median=0.3645 s  correct=pass bitwise=True  speed_limit=100->100  (260 s elapsed)
+omp    scalar   bs=96  n=2000  p=8  ok       median=1.518 s  correct=pass bitwise=True  speed_limit=100->100  (273 s elapsed)
+seq    avx2     bs=96  n=2000  p=1  ok       median=1.231 s  correct=pass bitwise=True  speed_limit=100->100  (284 s elapsed)
+omp    avx2     bs=96  n=2000  p=8  ok       median=0.3783 s  correct=pass bitwise=True  speed_limit=100->100  (289 s elapsed)
+campaign vec finished in 4.8 min
+EXIT 0
