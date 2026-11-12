@@ -10,7 +10,7 @@ CFLAGS   ?= -O2 -std=c11 -ffp-contract=off -Wall -Wextra
 OMPFLAGS  = -Xpreprocessor -fopenmp -I$(OMP)/include -L$(OMP)/lib -lomp
 SIZES    := 100 250 500 1000 1500 2000 3000 4000
 
-.PHONY: all venv build build-vec inputs test env bench-quick pilot bench analyze vecinfo report clean
+.PHONY: all venv build build-vec inputs test env bench-quick pilot bench analyze vecinfo report package clean
 
 all: build inputs test bench vecinfo analyze report
 
@@ -66,6 +66,11 @@ analyze:
 
 report:
 	cd report && PATH=/Library/TeX/texbin:$$PATH latexmk -pdf -interaction=nonstopmode report.tex
+
+# Submission package: tracked files only (no .git, .venv, build/, inputs, .DS_Store) + the report PDF.
+package:
+	mkdir -p dist
+	git archive --format=zip --prefix=Assignment03_GonzalezFernandez_Materials/ -o dist/Assignment03_GonzalezFernandez_Materials.zip HEAD
 
 clean:
 	rm -rf build results_quick results_pilot
