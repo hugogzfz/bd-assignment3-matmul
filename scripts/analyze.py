@@ -52,6 +52,8 @@ def fmt_t(t):
     """Seconds -> compact string with unit chosen per value (ms below 1 s)."""
     if t is None or (isinstance(t, float) and math.isnan(t)):
         return "--"
+    if t < 1e-3:
+        return sig(t * 1e6) + " $\\mu$s"
     return sig(t * 1e3) + " ms" if t < 1 else sig(t) + " s"
 
 
@@ -332,6 +334,52 @@ def within_process_drift(raw):
     return out
 
 
+def small_sizes(runs):
+    """Supplementary campaign (added after the main results): n = 16, 32, 64."""
+    sm = ok(runs, campaign="small")
+    if sm.empty:
+        return None
+    sm = add_speedup(sm, ["n"])
+    # fork/join cost estimate per parallel region: T_p - T_seq / p (assumes the work itself divides perfectly)
+    sm["region_overhead_s"] = np.where(sm.method == "omp", sm["median"] - sm.tseq / sm.threads_requested, np.nan)
+    sm[["n", "method", "threads_requested", "batch_size", "nmeas", "median", "q1", "q3", "rel_iqr", "S", "S_lo", "S_hi",
+        "E", "S1", "region_overhead_s", "correctness", "bitwise_equal_seq"]].sort_values(
+        ["n", "method", "threads_requested"], ascending=[True, False, True]).to_csv(RES / "summary_small.csv", index=False)
+    rows = []
+    for n in sorted(sm.n.unique()):
+        r = sm[sm.n == n]
+        s0 = r[r.method == "seq"].iloc[0]
+        row = [str(n), "%s (%s\\%%)" % (fmt_t(s0["median"]), sig(100 * s0.rel_iqr, 2))]
+        for p in (1, 2, 4, 8):
+            x = r[(r.method == "omp") & (r.threads_requested == p)].iloc[0]
+            row.append("%s [%.2f]" % (fmt_t(x["median"]), x.S))
+        rows.append(row)
+    write_table("small", ["$n$", "seq", "$p{=}1$", "$p{=}2$", "$p{=}4$", "$p{=}8$"], rows, "rlllll")
+
+    main = add_speedup(ok(runs, campaign="main"), ["n"])
+    fig, ax = plt.subplots(figsize=(5.4, 3.3))
+    ax.axhline(1, color=INK, lw=1, ls="--")
+    ax.axvspan(10, 80, color="#f0efec", zorder=0)
+    ax.text(28, 0.97, "supplementary\n(n = 16-64)", transform=ax.get_xaxis_transform(), ha="center", va="top",
+            color=MUTED, fontsize=7)
+    for k, p in enumerate((2, 4, 8)):
+        c = ramp(k, 3)
+        x = sm[(sm.method == "omp") & (sm.threads_requested == p)].sort_values("n")
+        y = main[(main.method == "omp") & (main.threads_requested == p)].sort_values("n")
+        ax.plot(y.n, y.S, color=c, marker=MARKERS[k], ms=4, label="p=%d" % p)
+        ax.plot(x.n, x.S, color=c, marker=MARKERS[k], ms=5, mfc="white", ls="--")
+    ax.set_xscale("log")
+    xt = [16, 32, 64, 100, 250, 500, 1000, 2000, 3000]
+    ax.set_xticks(xt); ax.set_xticklabels([str(v) for v in xt], fontsize=7.5); ax.minorticks_off()
+    ax.set_xlim(12, 3600); ax.set_ylim(0, 4.5)
+    ax.text(3400, 1.05, "S = 1", ha="right", color=MUTED, fontsize=7.5)
+    ax.set_xlabel("matrix size n"); ax.set_ylabel("speedup S(p) (median ratio)")
+    ax.set_title("Speedup vs n, main campaign (filled) and supplementary small sizes (open)")
+    ax.legend(frameon=False, loc="lower right")
+    save_fig(fig, "fig9_small")
+    return sm
+
+
 # ----------------------------------------------------------------------------- extras: ijk, bsweep, vec
 def ijk_reference(runs):
     ij = ok(runs, campaign="ijk")
@@ -430,7 +478,7 @@ def vectorisation(runs):
 
 # ----------------------------------------------------------------------------- environment, checks, limits
 def checks(runs):
-    r = runs[runs.campaign.isin(["main", "large", "ijk", "pass2", "bsweep", "vec"])]
+    r = runs[runs.campaign.isin(["main", "large", "ijk", "pass2", "bsweep", "vec", "small"])]
     okr = r[r.status == "ok"]
     omp = okr[okr.method == "omp"]
     info = {
@@ -475,6 +523,7 @@ def main():
     d = thread_study(runs)
     second_pass(runs, raw)
     within_process_drift(raw)
+    small_sizes(runs)
     ijk_reference(runs)
     bsweep(runs)
     vectorisation(runs)

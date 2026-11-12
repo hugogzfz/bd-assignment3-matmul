@@ -1,21 +1,21 @@
 {
-  "processes": 110,
+  "processes": 125,
   "status_counts": {
-    "ok": 110
+    "ok": 125
   },
-  "correctness_pass": 110,
-  "bitwise_equal_seq_true": 110,
-  "bitwise_checked": 110,
-  "omp_team_equals_requested": 88,
-  "omp_distinct_os_threads_equal_requested": 88,
-  "omp_processes": 88,
+  "correctness_pass": 125,
+  "bitwise_equal_seq_true": 125,
+  "bitwise_checked": 125,
+  "omp_team_equals_requested": 100,
+  "omp_distinct_os_threads_equal_requested": 100,
+  "omp_processes": 100,
   "max_rel_err_overall": 8.451e-15,
   "cpu_speed_limit_min": 100,
   "runs_with_speed_limit_below_100": 0,
   "largest_n_ok": 4000,
-  "measured_samples": 542,
+  "measured_samples": 617,
   "campaign_first_start_utc": "2026-11-12T19:47:59+00:00",
-  "campaign_last_start_utc": "2026-11-12T20:08:41+00:00",
+  "campaign_last_start_utc": "2026-11-12T22:20:26+00:00",
   "tests_total": 1404,
   "tests_failed": 0,
   "tests_per_binary": {
