@@ -1,0 +1,219 @@
+{
+  "files": {
+    "A_n100.bin": {
+      "bytes": 80000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 100,
+      "sha256": "f85e42172d0db4bae7a4178014cc7997980ade26a60519017fdce5160bb1d318"
+    },
+    "A_n1000.bin": {
+      "bytes": 8000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1000,
+      "sha256": "9c9b457f7ae76d747e09935cfe718a980c7b6669421987a34a9f131bc7959760"
+    },
+    "A_n1024.bin": {
+      "bytes": 8388608,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1024,
+      "sha256": "a1f4d8aa5539f11fb0e34a0d796ec7d0892fbd428f2d2232667063e6484db532"
+    },
+    "A_n1250.bin": {
+      "bytes": 12500000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1250,
+      "sha256": "cf5a2fc2ccf01f06b0023e760af351407fc013e82afeb2fbb469516fd87da2a9"
+    },
+    "A_n1500.bin": {
+      "bytes": 18000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1500,
+      "sha256": "6d3a3b5fa721731a4104d080a0ddf36cb0e611d1533e273a350a6cac9ab9a0af"
+    },
+    "A_n2000.bin": {
+      "bytes": 32000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 2000,
+      "sha256": "598ac84f9c9c3a4eba429086c48c709714c5a655fc443231fdf658201044d69c"
+    },
+    "A_n2048.bin": {
+      "bytes": 33554432,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 2048,
+      "sha256": "cd26297761688dc479caa9f39909f4dc94d7008e2896ce6a97a5205c2b329971"
+    },
+    "A_n250.bin": {
+      "bytes": 500000,
+      "kind": "dense-uniform",
+      "n": 250,
+      "sha256": "6ffe3e35403fb74d9135f497a777f885777922c14a8e64707d1781f1174b488b"
+    },
+    "A_n3000.bin": {
+      "bytes": 72000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 3000,
+      "sha256": "9fc9007f247a8f55e00678245063b28730bce256ddbded305cce8fd01b0caff7"
+    },
+    "A_n4000.bin": {
+      "bytes": 128000000,
+      "kind": "dense-uniform",
+      "n": 4000,
+      "sha256": "9e94d55bd5299f1612a17dfa10ebac9ca4a0ff6df6dcdd41c8d9ea2aa6d9fe65"
+    },
+    "A_n500.bin": {
+      "bytes": 2000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 500,
+      "sha256": "919f5edd27106bb702f9f10bc0e13b39fbfd77f5d073c39f7c8f2316bdb1a1e2"
+    },
+    "A_n5000.bin": {
+      "bytes": 200000000,
+      "kind": "dense-uniform",
+      "n": 5000,
+      "sha256": "4946c28f96bbd10a5b2d2373c67a1db75ce602e5e77782f0927e4d6fcae59943"
+    },
+    "A_n512.bin": {
+      "bytes": 2097152,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 512,
+      "sha256": "3d846009738373e6fcc042f181af77674176099efa016a6355805b8dfb5260b8"
+    },
+    "A_n6000.bin": {
+      "bytes": 288000000,
+      "kind": "dense-uniform",
+      "n": 6000,
+      "sha256": "352bab68eb2cb10a0602abc52d5f289e4293680162d719dec30fa0c9fa63c1f8"
+    },
+    "A_n750.bin": {
+      "bytes": 4500000,
+      "kind": "dense-uniform",
+      "n": 750,
+      "sha256": "a59ecd0835e898090d691769cd80cca92a6e44b058359142db53da991461d3a4"
+    },
+    "A_n8000.bin": {
+      "bytes": 512000000,
+      "kind": "dense-uniform",
+      "n": 8000,
+      "sha256": "8293fd347e8ab1bc787c97faa1cec7327f3f46c8e482af7dbaf72795122f7501"
+    },
+    "B_n100.bin": {
+      "bytes": 80000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 100,
+      "sha256": "d9408ac722f7c384318d09ad154c54c27c5fa1305492a618aeae2e757ed04e14"
+    },
+    "B_n1000.bin": {
+      "bytes": 8000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1000,
+      "sha256": "d1a53f5bd8a786a2809bc39e96593990b64c3ac2e72c5340ec62e8ace307fc9f"
+    },
+    "B_n1024.bin": {
+      "bytes": 8388608,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1024,
+      "sha256": "92c6fcd40e34a8184a0c9e9bd9ce4135b169e2a99e6f7bdb1bd7877ac1c8db49"
+    },
+    "B_n1250.bin": {
+      "bytes": 12500000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1250,
+      "sha256": "03d7908bc028495792d4685a0a7c0dbcc912454d5aaea54fac0af642aff3fd13"
+    },
+    "B_n1500.bin": {
+      "bytes": 18000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 1500,
+      "sha256": "b366cebd84556497d6c1cdcdd43fe341c28c8d5fbbe7f4ae9c414f581649405b"
+    },
+    "B_n2000.bin": {
+      "bytes": 32000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 2000,
+      "sha256": "be3d94e19dab7f85a0076045cdb63ebcc41c730d5d312209ef28a1b945bf2605"
+    },
+    "B_n2048.bin": {
+      "bytes": 33554432,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 2048,
+      "sha256": "c90f8e60ee3b6488d4e2bd2a5c121091db24e7e06caea8ed63da46e189146407"
+    },
+    "B_n250.bin": {
+      "bytes": 500000,
+      "kind": "dense-uniform",
+      "n": 250,
+      "sha256": "31cecbcae8a132db44d3489d1b0c1e0eb2e225c37295d1478f6cae0451aa7ff2"
+    },
+    "B_n3000.bin": {
+      "bytes": 72000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 3000,
+      "sha256": "247553c36521e220b838339c4fd7dd38b0dcf7471c99c0b979ea62d27e38f82a"
+    },
+    "B_n4000.bin": {
+      "bytes": 128000000,
+      "kind": "dense-uniform",
+      "n": 4000,
+      "sha256": "fc95a7f101ddc59cbf5615c1cfe8fbfef31e05c28ed5fdbeb6ff98f567c72737"
+    },
+    "B_n500.bin": {
+      "bytes": 2000000,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 500,
+      "sha256": "39ed2a5848e6c6fa30ea4590f3f3e3b9da9437d01132bd5c38bb4914e8b7eac1"
+    },
+    "B_n5000.bin": {
+      "bytes": 200000000,
+      "kind": "dense-uniform",
+      "n": 5000,
+      "sha256": "6e42609bfd8efdefb1153fc2302b9becd546d34cc45e3d02845216c7b44a7984"
+    },
+    "B_n512.bin": {
+      "bytes": 2097152,
+      "identical_to_assignment1": true,
+      "kind": "dense-uniform",
+      "n": 512,
+      "sha256": "028f431cf778b66a403f8e841b9e01a866afc2ef267f7282dd478902e03f98d3"
+    },
+    "B_n6000.bin": {
+      "bytes": 288000000,
+      "kind": "dense-uniform",
+      "n": 6000,
+      "sha256": "234871746b64d0a394d76aafefb57ce11ec6704ce9abb4212f3004f18c45c352"
+    },
+    "B_n750.bin": {
+      "bytes": 4500000,
+      "kind": "dense-uniform",
+      "n": 750,
+      "sha256": "022f32925cca50b9150a160e8d13c442b7e091279d37a89212fbd4fd5db69753"
+    },
+    "B_n8000.bin": {
+      "bytes": 512000000,
+      "kind": "dense-uniform",
+      "n": 8000,
+      "sha256": "a552a34f9a0e554868752c2b5030eb87f1e0551f10ba65644707adbf9cf96630"
+    }
+  },
+  "generator": "numpy.random.default_rng(PCG64) seeded with [20261012, n, w] (w=0 for A, 1 for B); uniform [0,1) float64, little-endian, row-major",
+  "seed": 20261012,
+  "source": "dense entries copied from data/manifest.json of github.com/hugogzfz/bd-assignment2-matmul @ 1aab86d7c5b014435b90e9c4baf7031ba9e05aa0"
+}
