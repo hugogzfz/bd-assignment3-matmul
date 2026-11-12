@@ -1,0 +1,9 @@
+\begin{tabular}{llrrrrrl}
+\toprule
+build & extra flags & mulpd & addpd & mulsd & addsd & ymm & compiler remark (inner loop) \\
+\midrule
+scalar & \texttt{-fno-vectorize -fno-slp-vectorize} & 0 & 0 & 1 & 1 & 0 & \parbox[t]{5.2cm}{\raggedright\footnotesize loop not vectorized} \\
+sse2 & -- & 6 & 6 & 1 & 1 & 0 & \parbox[t]{5.2cm}{\raggedright\footnotesize vectorized loop (vectorization width: 2, interleaved count: 2)} \\
+avx2 & \texttt{-mavx2} & 4 & 4 & 1 & 1 & 13 & \parbox[t]{5.2cm}{\raggedright\footnotesize vectorized loop (vectorization width: 4, interleaved count: 4)} \\
+\bottomrule
+\end{tabular}
