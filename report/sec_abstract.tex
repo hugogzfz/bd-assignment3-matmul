@@ -5,9 +5,10 @@ matrix multiplication on a 4-core / 8-thread laptop CPU, and from which size doe
 OpenMP threads and runs the same kernel, so both perform bit-identical arithmetic on the same inputs. Thread counts 1--8 plus 16 (oversubscription),
 $n=100$--$4000$, monotonic kernel timer, warm-up, 5 samples (3 at $n=4000$), median and IQR, randomised order, a repeated pass, \texttt{ru\_maxrss}
 memory, budgets of 120~s and 4~GiB, 1404 correctness checks and per-run validation; an optional extension compares scalar, SSE2 and AVX2 builds.
-\textbf{Results.} All 110 runs were correct and bit-identical to the baseline. Speedup is almost linear up to the 4 physical cores
+\textbf{Results.} All 125 runs were correct and bit-identical to the baseline. Speedup is almost linear up to the 4 physical cores
 ($S(4)=3.40$--$3.95$, efficiency 0.85--0.99) and saturates there: 8 threads change it by $-15$ to $+6\%$ and 16 threads give no consistent gain.
-Parallelism already paid off at $n=100$ ($S(4)=3.54$). With one thread the OpenMP version matches the baseline within the between-process noise, and
+Parallelism already paid off at $n=100$ ($S(4)=3.54$); a supplementary experiment added afterwards places the break-even between
+$n=16$ (all parallel runs slower) and $n=32$ ($S(4)=2.56$). With one thread the OpenMP version matches the baseline within the between-process noise, and
 memory does not grow with the thread count. AVX2 is 3.9--5.1$\times$ faster than scalar code at equal thread count.
 \textbf{Scope.} One laptop, unpinned threads, $\pm10\%$ variability between periods of the campaign and no hardware counters; conclusions apply to
 this kernel, timing boundary and machine.

@@ -17,7 +17,7 @@ gives everything needed to rebuild and re-run the study.
 src/c/matmul3.c               seq (A2 blocked kernel, bs = 96), omp (same kernel, rows of C split among threads), ijk (A1 reference)
 scripts/gen_inputs.py         generates the input matrices and checks them against data/manifest.json
 scripts/test_correctness.py   correctness tests -> results/correctness_tests.csv
-scripts/run_benchmarks.py     measurement driver (campaigns main, large, ijk, pass2, bsweep, vec; pilot, quick)
+scripts/run_benchmarks.py     measurement driver (campaigns main, large, ijk, pass2, bsweep, vec, small; pilot, quick)
 scripts/env_info.py           environment record -> results/environment.json
 scripts/analyze.py            summaries (results/summary_*), LaTeX tables (report/tables/) and figures (figures/)
 scripts/vec_evidence.py       vectorisation evidence (compiler remarks + disassembly counts)
@@ -50,7 +50,8 @@ make inputs         # regenerates data/A_n*.bin, data/B_n*.bin and verifies them
 make build-vec      # scalar / SSE2 / AVX2 builds of the optional vectorisation extension (build/vec/)
 make test           # correctness suite on the primary and the three vector builds (must report 0 failed)
 make bench-quick    # reduced run (< 1 min, n <= 1000) -> results_quick/, to check that everything works
-caffeinate -i make bench   # full campaign -> results/ (about 35 min; resumable with --resume)
+caffeinate -i make bench   # full campaign -> results/ (about 21 min measured; resumable with --resume)
+caffeinate -i make bench-small   # supplementary n = 16, 32, 64 campaign, added after the main results (~1 min)
 make vecinfo        # vectorisation evidence
 make analyze        # summaries, tables, figures
 make report         # report/report.pdf (needs /Library/TeX/texbin in PATH)
@@ -82,8 +83,8 @@ Output lines of `matmul3`: `META`, `RSS_AFTER_LOAD_BYTES`, `OS_THREADS_BEFORE`, 
 ## 6. Inputs
 
 Uniform [0,1) `float64`, `numpy.random.default_rng([20261012, n, w])` (w = 0 for A, 1 for B), little-endian row-major binary files
-`data/A_n<n>.bin`, `data/B_n<n>.bin` for n = 100, 250, 500, 1000, 1500, 2000, 3000, 4000. `make inputs` regenerates them and aborts if any
-SHA-256 differs from `data/manifest.json` (digests copied from Assignment 2; all identical).
+`data/A_n<n>.bin`, `data/B_n<n>.bin` for n = 16, 32, 64, 100, 250, 500, 1000, 1500, 2000, 3000, 4000. `make inputs` regenerates them and aborts
+if any SHA-256 differs from `data/manifest.json` (digests for n ≥ 100 copied from Assignment 2, all identical; n = 16, 32, 64 recorded in this study).
 
 ## 7. Columns of the raw CSV files
 
@@ -91,7 +92,7 @@ SHA-256 differs from `data/manifest.json` (digests copied from Assignment 2; all
 
 | column | meaning |
 |---|---|
-| campaign | main, large, ijk, pass2, bsweep, vec |
+| campaign | main, large, ijk, pass2, bsweep, vec, small (supplementary) |
 | run_id | `campaign:method:variant:n:p:bs:pass`, key to runs.csv |
 | pass | 1, or 2 for the repeated n = 2000 sweep |
 | order | position of the process in the randomised order of its n |
@@ -123,6 +124,8 @@ binary and the three vector builds. `results/summary_*.csv` are produced by `ana
   behaviour and the OS scheduler.
 * No thread affinity is possible on macOS; no hardware performance counters were used, so statements about frequency, caches or
   shared execution units are explanations supported indirectly, not measured.
+* The `small` campaign (n = 16, 32, 64) was added after seeing the main results, to locate where parallelism stops paying off; it ran
+  separately about two hours after the main campaign (`results/campaign_small.log`).
 * A 37 s pilot and two quick runs were used only to estimate durations; they are not reported (`results_pilot/`, `results_quick/` are not
   part of the results).
 * Use of AI: see the AI-use section at the end of the report.

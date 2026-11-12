@@ -32,10 +32,10 @@ Guía corta para preparar la defensa oral. Todos los números salen de `results/
 
 ## 3. Resultados clave (memorízalos)
 
-- 110 procesos, todos `ok`, todos correctos y **bit a bit idénticos** a `seq`. Campaña de 21 min sin throttling (`CPU_Speed_Limit` = 100).
+- 110 procesos en la campaña principal y 15 en la extra, todos `ok`, todos correctos y **bit a bit idénticos** a `seq`. La campaña principal duró 21 min sin throttling (`CPU_Speed_Limit` = 100).
 - `seq`: ≈ 6 GFLOP/s en todos los tamaños; n = 4000 tarda 19,6 s y usa 367 MiB.
 - **S(4) = 3,40–3,95, E(4) = 0,85–0,99** para todos los n. Con 8 hilos (Hyper-Threading) S cambia entre −15 % y +6 %; con 16 hilos no hay ganancia sistemática.
-- **Incluso n = 100 (0,31 ms) gana: S(4) = 3,54.** H4 rechazada.
+- **Incluso n = 100 (0,31 ms) gana: S(4) = 3,54.** Experimento extra (añadido después de ver la campaña principal): **con n = 16 (1,5 µs) todo paralelo es más lento** (S = 0,82 / 0,70 / 0,53 / 0,40 con p = 1/2/4/8); **con n = 32 (10 µs) ya compensa** (S(4) = 2,56). El umbral está entre 16 y 32. H4 parcialmente rechazada: el umbral existe pero está mucho más abajo de lo que predije.
 - `omp` con p = 1 ≈ `seq` (−3 % a +2 % en 6 de 8 tamaños; en los otros 2, `omp` fue *más rápido*, por ruido del baseline).
 - Superlinealidad aparente (E > 1 en n = 1500) → explicada: el `seq` de ese n fue lento; respecto a `omp` p=1, E ≤ 1.
 - Memoria = 3·8n² + < 1,5 MiB, no depende de p.
@@ -88,12 +88,15 @@ Guía corta para preparar la defensa oral. Todos los números salen de `results/
     b = 96 se fijó antes de medir, para ser comparable con A2. El bsweep es una comprobación: cambia el tiempo un 5–11 %, pero S(4) se mantiene entre 3,54 y 3,86.
 
 15. **¿Cuándo compensa paralelizar?**
-    En este kernel y con esta frontera de tiempo, desde el tamaño más pequeño medido (n = 100). Lo óptimo es usar tantos hilos como núcleos físicos (4). El umbral real queda por debajo de 100 o en llamadas aisladas en frío, que no medí.
+    Entre n = 16 y n = 32, es decir, cuando la multiplicación secuencial cuesta más de unos 10 µs. Con n = 16 el coste de cada región paralela (estimado en 1,4–3,5 µs con 2–8 hilos) es del orden del trabajo total (1,5 µs), así que más hilos empeoran el resultado. A partir de n = 32 conviene usar tantos hilos como núcleos físicos (4). La medida de n = 16–64 la añadí después de ver la campaña principal y lo indico en el informe, como en la A2. No medí llamadas aisladas en frío (que incluirían la creación de los hilos).
+
+16. **¿Cómo estimas el coste de una región paralela?**
+    Con T_p − T_seq/p a n = 16, suponiendo que el trabajo se reparte perfectamente: 0,33 µs con 1 hilo y 1,4, 2,4 y 3,5 µs con 2, 4 y 8 hilos. Crece con p porque hay que despertar más hilos y esperar a todos en la barrera.
 
 ## 5. Limitaciones que debes mencionar tú
 
-Un solo portátil, hilos sin fijar a núcleos, sin contadores hardware ni medida de frecuencia (`powermetrics` necesita sudo), ±10 % de variabilidad entre periodos, solo 5 muestras por configuración, y el overhead de la primera llamada (creación de hilos) no analizado.
+Un solo portátil, hilos sin fijar a núcleos, el experimento de n = 16–64 añadido a posteriori y medido en otro momento, sin contadores hardware ni medida de frecuencia (`powermetrics` necesita sudo), ±10 % de variabilidad entre periodos, solo 5 muestras por configuración, y el overhead de la primera llamada (creación de hilos) no analizado.
 
 ## 6. Uso de IA
 
-Usé Claude Code (Anthropic) para el plan, el código, los scripts, el borrador del informe y esta guía, como declaro en el informe. Revisé el código y supervisé la campaña. Todos los números salen de los CSV. Las referencias están comprobadas; la página final (15) de Marr et al. está deducida del índice de la revista.
+Usé Claude Code (Anthropic) para el plan, el código, los scripts, el borrador del informe y esta guía, como declaro en el informe. Revisé el código y supervisé la campaña. Todos los números salen de los CSV. Las referencias están comprobadas.

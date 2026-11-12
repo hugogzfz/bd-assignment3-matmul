@@ -118,6 +118,14 @@ whose $3\cdot8n^2$ array storage exceeds the memory budget is not attempted. Vio
 reported) was used only to estimate its duration.
 \end{itemize}
 
+\subsection{Supplementary experiment: small sizes (added after the main campaign)}
+The main campaign showed a large speedup even at the smallest planned size ($n=100$), so the size threshold of H4 was not located. As in
+Assignment~2, a supplementary experiment was therefore \emph{added after seeing those results}: campaign \texttt{small} measures $n=16,32,64$ with
+\texttt{seq} and \texttt{omp} $p\in\{1,2,4,8\}$ under the same protocol (1 warm-up, 5 samples, batches of 147\,965, 18\,496 and 2\,312
+multiplications so that a sequential sample lasts about 0.2~s, randomised order, 3~s pauses, per-run validation). It ran separately, about two hours
+after the main campaign (22:19--22:20 UTC), with the laptop again idle and on mains power. The inputs come from the same generator and seed; their SHA-256 digests were
+added to the manifest (they did not exist in Assignment~2).
+
 \subsection{Optional vectorisation extension}
 The same source is compiled three times with the base flags above, changing only SIMD code generation: \textbf{scalar}
 (\texttt{-fno-vectorize -fno-slp-vectorize}), \textbf{SSE2} (default \texttt{-O2}, 128-bit, 2 doubles per instruction) and \textbf{AVX2}

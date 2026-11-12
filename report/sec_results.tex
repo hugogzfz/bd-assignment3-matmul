@@ -150,6 +150,26 @@ tiles (Table~\ref{tab:bsweep}, Fig.~\ref{fig:bsweep}).
 \label{fig:bsweep}
 \end{figure}
 
+\subsection{Supplementary experiment: where parallelism stops paying off}
+The 15 processes of the supplementary campaign were all correct, bit-identical to the baseline and without thermal limit. Table~\ref{tab:small}
+and Fig.~\ref{fig:small} show the result. At $n=16$, where one sequential multiplication takes 1.47~$\mu$s, \textbf{every parallel configuration
+is slower than the baseline}: $S=0.82$, $0.70$, $0.53$ and $0.40$ for $p=1,2,4,8$, i.e.\ more threads make it worse. At $n=32$ (9.6~$\mu$s)
+parallel execution already pays: $S(2)=1.70$, $S(4)=2.56$ (noisy: relative IQR 38\%, IQR-based range 1.86--2.58), $S(8)=2.06$; at $n=64$
+(70~$\mu$s) $S(4)=2.95$. The break-even therefore lies between $n=16$ and $n=32$ for this machine and timing boundary. For $n\le64$, 8 threads
+are always slower than 4. Assuming the work itself divides perfectly, $T_p-T_{seq}/p$ at $n=16$ estimates the cost of one parallel region:
+0.33~$\mu$s with one thread, 1.4, 2.4 and 3.5~$\mu$s with 2, 4 and 8 threads.
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Supplementary campaign \texttt{small} (added after the main results): median time per multiplication (relative IQR for \texttt{seq}) and [speedup $S(p)$].}
+\label{tab:small}\input{tables/small}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.62\linewidth]{fig9_small}
+\caption{Speedup against $n$ including the supplementary sizes $n=16$--$64$ (open markers, separate later campaign; shaded) and the main campaign (filled). Below the horizontal line the parallel version is slower than the baseline.}
+\label{fig:small}
+\end{figure}
+
 \subsection{Optional extension: vectorisation}
 \textbf{Evidence.} Clang reports the inner $j$ loop of the kernel (line 101) as ``not vectorized'' in the scalar build, ``vectorized loop
 (vectorization width: 2, interleaved count: 2)'' with SSE2 and ``(vectorization width: 4, interleaved count: 4)'' with AVX2. The disassembly of the

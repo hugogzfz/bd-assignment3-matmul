@@ -2,10 +2,11 @@
 \subsection{Answer to the research question}
 On this 4-core / 8-thread laptop, the OpenMP version of the blocked kernel scales almost linearly up to the number of \emph{physical} cores
 and then stops: $S(4)=3.40$--$3.95$ ($E(4)=0.85$--$0.99$) for every tested size, while 6, 8 or 16 threads change the speedup by at most a few
-percent for $n\ge500$. Within the tested range, parallel execution paid off at \emph{every} size, down to $n=100$ (0.31~ms per sequential
-product), where 4 threads still gave $S=3.54$. The practical answer is therefore: use as many threads as physical cores; more threads
-cost efficiency without a reliable gain, and the size threshold below which parallelism does not pay lies below $n=100$ for this
-implementation and timing boundary.
+percent for $n\ge500$. In the main campaign parallel execution paid off at every size, down to $n=100$ (0.31~ms per sequential product, $S(4)=3.54$); the
+supplementary experiment located the threshold between $n=16$ and $n=32$: at $n=16$ (1.5~$\mu$s of work) every parallel configuration is slower
+than the baseline, at $n=32$ (10~$\mu$s) four threads are 2.6$\times$ faster. The practical answer is therefore: parallelise once a product
+costs more than roughly ten microseconds of sequential work, and use as many threads as physical cores; more threads cost efficiency without a
+reliable gain.
 
 \subsection{Hypotheses against the evidence}
 \begin{itemize}
@@ -23,10 +24,13 @@ floating-point units of a core busy.
 value inside a 24--28\% IQR) and clearly hurt only at $n=100$ ($-26\%$), where each thread's share (6--7 rows, about 20~$\mu$s of work) is
 comparable to the cost of time-slicing 16 threads on 8 contexts and waiting at the barrier for the last one. For larger $n$ the cost was
 not distinguishable from the noise.
-\item \textbf{H4 rejected} in the tested range. The prediction of $S(4)<2$ for $n\le250$ was wrong: $S(4)=3.54$ and $3.56$. The OpenMP runtime keeps
-its thread pool between parallel regions, so after the warm-up each region only has to restart the existing threads and synchronise at the
-final barrier; the measurements show that this costs far less than the 0.31~ms of work at $n=100$. This conclusion is bound to the timing boundary: products were timed in batches
-after a warm-up; a single cold call, which includes the creation of the threads, was not measured separately, and sizes below 100 were not tested.
+\item \textbf{H4 partly rejected.} The existence of a threshold was confirmed, but its position was wrong: the prediction of $S(4)<2$ for $n\le250$
+failed ($S(4)=3.54$ and $3.56$ at $n=100$ and $250$), and the threshold lies between $n=16$ and $n=32$ (supplementary experiment, added after
+the main results). The OpenMP runtime keeps its thread pool between parallel regions, so after the warm-up each region only has to restart the
+existing threads and synchronise at the final barrier. The estimated cost of a region, 1.4--3.5~$\mu$s for 2--8 threads, grows with $p$ and is of
+the same order as the whole sequential product at $n=16$ (1.47~$\mu$s), which explains why more threads are \emph{worse} there; at $n=32$ the
+10~$\mu$s of work already amortise it. This conclusion is bound to the timing boundary: products were timed in batches after a warm-up; a
+single cold call, which includes the creation of the threads, was not measured separately.
 \item \textbf{H5 supported within the noise.} The one-thread parallel run differs from the baseline by $-3\%$ to $+2\%$ for six sizes; the two
 exceptions ($-6$ to $-7\%$) go in the \emph{opposite} direction of an overhead and coincide with the noisiest sequential runs. Any OpenMP overhead
 with one thread is smaller than the between-process variability ($\approx\pm5$--$10\%$, Section~\ref{sec:var}).
@@ -66,26 +70,27 @@ is only present in the warm-up samples and is not analysed.
 \section{Conclusions}
 Within the tested scope (blocked i-k-j kernel, $b=96$, \texttt{float64}, $n=100$--$4000$, one i7-6820HQ laptop under macOS, steady-state timing):
 \begin{itemize}
-\item Row-partitioned OpenMP parallelisation of the Assignment~2 kernel is correct and race-free: all 110 measured products and 1404 test products are
+\item Row-partitioned OpenMP parallelisation of the Assignment~2 kernel is correct and race-free: all 125 measured products (110 main + 15 supplementary) and 1404 test products are
 bit-identical to the sequential baseline, and the reported thread counts match the real OS threads.
 \item The speedup grows almost linearly up to the 4 physical cores ($S(4)=3.4$--$4.0$, $E(4)=0.85$--$0.99$) and saturates there; Hyper-Threading
 ($p=8$) and oversubscription ($p=16$) add no reliable gain for this compute-bound kernel and halve or quarter the efficiency.
-\item Parallel execution already paid off at $n=100$; the break-even size, if any, is below the tested range for this timing boundary.
+\item Parallel execution stops paying off between $n=16$ and $n=32$ (about 1.5 vs.\ 10~$\mu$s of sequential work per product, in steady state):
+at $n=16$ every thread count is slower than the baseline and more threads are worse; from $n=32$ upwards 2--4 threads give $S=1.7$--$4.0$.
 \item The OpenMP version with one thread has no overhead measurable above the $\pm5$--$10\%$ variability between processes, and memory does not grow with the
 number of threads.
 \item (Extension) SIMD code generation and threads multiply: AVX2 is 3.9--5.1$\times$ faster than scalar code at equal thread count, and AVX2 with
 4 threads is $14.9\times$ faster than the scalar sequential version at $n=2000$ (43.9~GFLOP/s).
 \end{itemize}
-\textbf{Unresolved:} the size at which parallelism stops paying (below $n=100$, or for single cold calls), the cause of the period-to-period
-variability, and a direct measurement of clock frequency and cache behaviour, which would need hardware counters and administrator access.
+\textbf{Unresolved:} the cost of a single cold parallel call (thread creation), the exact break-even between $n=16$ and $32$, the cause of the
+period-to-period variability, and a direct measurement of clock frequency and cache behaviour, which would need hardware counters and administrator access.
 
 \section{Use of generative AI}
 In line with the course policy, the use of AI is disclosed: the tool was \textbf{Claude Code} (Anthropic). It was used for planning the experimental
 design and hypotheses, writing the C implementation (adapting the Assignment~2 kernel), the benchmark driver, the test, analysis, plotting and
 vectorisation-evidence scripts, the README, a first draft of this report and the oral-defence notes. It also searched for and checked the bibliographic
-data of the new references. The author reviewed the code and the design decisions, ran and supervised the measurement campaign, checked that every
-number in this report comes from the raw CSV files, and is responsible for the conclusions. No result or reference was produced without being
-checked against the measurements or the cited source.
+data of the new references. The author approved the plan and the design decisions, supervised the execution of the measurement campaign on the author's own laptop, and
+reviewed the report and the oral-defence guide. The author remains responsible for understanding the code, validating the measurements and defending
+the conclusions.
 
 \section*{Reproducibility materials}
 Repository: \repourl{} (code, Makefile, README with exact commands, raw CSV files, environment record, analysis scripts and figures). Reused material:
