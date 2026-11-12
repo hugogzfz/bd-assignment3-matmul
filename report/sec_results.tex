@@ -185,7 +185,7 @@ instructions. One scalar multiply and one scalar add remain in each build (in th
 \textbf{Performance.} Table~\ref{tab:vec} and Fig.~\ref{fig:vec} cross the three builds with the thread counts. The bracketed factor is the
 \emph{SIMD gain} $T_{scalar}(p)/T_{build}(p)$ at the same $p$ and $n$, so it isolates code generation from thread count. SSE2 is 2.23--2.88$\times$
 faster than scalar code and AVX2 3.94--5.08$\times$ faster, at every $p$. Within each build, the thread speedup at $p=4$ is 3.09--3.56 (scalar),
-3.61--3.89 (SSE2) and 3.38--3.56 (AVX2). Going from 4 to 8 threads raises the throughput of the scalar build at $n=1000$ by 23\% (235 to 192~ms) but slightly
+3.61--3.89 (SSE2) and 3.38--3.56 (AVX2). Going from 4 to 8 threads raises the throughput of the scalar build at $n=1000$ by 23\% (median time from 235 to 192~ms) but slightly
 slows the AVX2 build (46.2 to 48.6~ms at $n=1000$, 364 to 378~ms at $n=2000$). At $n=2000$ the AVX2 gain decreases from 4.40 (sequential) to
 4.01 ($p=8$); at $n=1000$ it does not decrease monotonically (5.08 at $p=4$). The fastest configuration, AVX2 with 4 threads, reaches
 43.9~GFLOP/s at $n=2000$, $14.9\times$ the scalar sequential time. All 30 products were bit-identical to the baseline.

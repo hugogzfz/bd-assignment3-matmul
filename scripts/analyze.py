@@ -211,7 +211,7 @@ def thread_study(runs):
     save_fig(fig, "fig1_runtime")
 
     # Fig 2 & 3: speedup and efficiency vs p, one line per n
-    for name, col, ylab, title in (("fig2_speedup", "S", "speedup S(p) = T_seq / T_p", "Speedup vs threads"),
+    for name, col, ylab, title in (("fig2_speedup", "S", "speedup $S(p) = T_{seq} / T_p$", "Speedup vs threads"),
                                    ("fig3_efficiency", "E", "efficiency E(p) = S(p) / p", "Efficiency vs threads")):
         fig, ax = plt.subplots(figsize=(5.2, 3.6))
         ax.axvspan(LOGICAL, 17, color="#f0efec", zorder=0)
@@ -251,7 +251,7 @@ def thread_study(runs):
     ax.set_xscale("log"); ax.set_xticks(sizes); ax.set_xticklabels([str(x) for x in sizes], fontsize=7.5)
     ax.minorticks_off()
     ax.set_xlabel("matrix size n"); ax.set_ylabel("speedup S(p) (median ratio)")
-    ax.set_title("Speedup vs n (bars: range from the IQRs of T_seq and T_p)")
+    ax.set_title("Speedup vs n (bars: range from the IQRs of $T_{seq}$ and $T_p$)")
     ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.01, 0.5))
     save_fig(fig, "fig4_speedup_vs_n")
 

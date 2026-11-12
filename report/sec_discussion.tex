@@ -17,8 +17,8 @@ maximum turbo clock, 3.6~GHz, is well above its 2.7~GHz base \cite{nbc}); and th
 100, i.e.\ without OS-level throttling. Load imbalance cannot explain
 the gap: rows are split to within one row and every thread receives rows.
 \item \textbf{H2 supported.} $S(8)/S(4)=0.85$--$1.06$ and $E(8)\le0.52<E(4)$. The vectorisation campaign adds evidence for the mechanism
-\cite{marr}: Hyper-Threading raised the throughput of the scalar build by 23\% at $n=1000$, whose single thread leaves execution
-units idle, but not that of the SSE2 build (+2\%) and slightly lowered that of the AVX2 build ($-5\%$), whose single thread already keeps the
+\cite{marr}: going from 4 to 8 threads (Hyper-Threading) raised the throughput of the scalar build at $n=1000$ by 23\% (median time
+from 235 to 192~ms), whose single thread leaves execution units idle, but not that of the SSE2 build (+2\%) and slightly lowered that of the AVX2 build ($-5\%$), whose single thread already keeps the
 floating-point units of a core busy.
 \item \textbf{H3 partly supported.} Oversubscription never gave a consistent gain over $p=8$ ($S(16)/S(8)=0.74$--$1.31$, with the high
 value inside a 24--28\% IQR) and clearly hurt only at $n=100$ ($-26\%$), where each thread's share (6--7 rows, about 20~$\mu$s of work) is
