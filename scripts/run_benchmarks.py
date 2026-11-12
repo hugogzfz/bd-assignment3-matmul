@@ -3,7 +3,7 @@
 One process per configuration (method, n, threads), warm-up + measured samples, 120 s / 4 GiB budgets, a pause
 between processes, a seeded random order of the configurations of each size, and validation of every product
 against NumPy (tolerance 2*gamma_n) plus a SHA-256 of C to check bit-for-bit equality with the sequential baseline.
-Campaigns: pilot, quick, main, large, pass2, ijk."""
+Campaigns: pilot, quick, main, large, pass2, ijk, bsweep, vec (optional SIMD extension)."""
 import os
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")   # NumPy is only used for validation; keep it single-threaded
@@ -29,7 +29,6 @@ import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
-EXE = ROOT / "build" / "matmul3"
 U = 2.0 ** -53
 T_SAMPLE = 120.0                 # budget: seconds per timed sample
 MEM_BYTES = 4 * 1024 ** 3        # budget: resident memory per process (4 GiB)
@@ -39,19 +38,34 @@ SEQ_S_PER_N3 = 3.3e-10           # pilot estimate of the sequential time per n^3
 BATCH_TARGET_S = 0.2             # batch tiny products so that one sequential sample lasts at least ~0.2 s
 
 THREADS_ALL = [1, 2, 3, 4, 6, 8, 16]      # 16 > 8 logical processors: oversubscription
+VARIANTS = {"sse2": ROOT / "build" / "matmul3", "scalar": ROOT / "build" / "vec" / "matmul3_scalar",
+            "avx2": ROOT / "build" / "vec" / "matmul3_avx2", "sse2-vec": ROOT / "build" / "vec" / "matmul3_sse2"}
+
+
+def cfg(method, p, variant="sse2", bs=BS):
+    return (method, p, variant, bs)
+
+
+SWEEP = [cfg("seq", 1)] + [cfg("omp", p) for p in THREADS_ALL]
 CAMPAIGNS = {
-    # name: (sizes, configs, warm-up, measured repetitions, pause between processes in s, pass)
-    "pilot": ([1000, 2000], [("seq", 1), ("omp", 4), ("omp", 8)], 1, 2, 2.0, 1),
-    "quick": ([100, 250, 500, 1000], [("seq", 1)] + [("omp", p) for p in (1, 2, 4, 8, 16)], 1, 3, 0.5, 1),
-    "main": ([100, 250, 500, 1000, 1500, 2000, 3000], [("seq", 1)] + [("omp", p) for p in THREADS_ALL], 1, 5, 3.0, 1),
-    "large": ([4000], [("seq", 1), ("omp", 1), ("omp", 4), ("omp", 8)], 1, 3, 3.0, 1),
-    "pass2": ([2000], [("seq", 1)] + [("omp", p) for p in THREADS_ALL], 1, 5, 3.0, 2),
-    "ijk": ([500, 1000], [("ijk", 1)], 1, 5, 3.0, 1),
+    # name: (sizes, configs (method, threads, build variant, tile size), warm-up, measured reps, pause in s, pass)
+    "pilot": ([1000, 2000], [cfg("seq", 1), cfg("omp", 4), cfg("omp", 8)], 1, 2, 2.0, 1),
+    "quick": ([100, 250, 500, 1000], [cfg("seq", 1)] + [cfg("omp", p) for p in (1, 2, 4, 8, 16)], 1, 3, 0.5, 1),
+    "main": ([100, 250, 500, 1000, 1500, 2000, 3000], SWEEP, 1, 5, 3.0, 1),
+    "large": ([4000], [cfg("seq", 1), cfg("omp", 1), cfg("omp", 4), cfg("omp", 8)], 1, 3, 3.0, 1),
+    "pass2": ([2000], SWEEP, 1, 5, 3.0, 2),
+    "ijk": ([500, 1000], [cfg("ijk", 1)], 1, 5, 3.0, 1),
+    "bsweep": ([2000], [cfg(m, p, bs=b) for b in (32, 64, 96, 128, 192) for m, p in (("seq", 1), ("omp", 4))],
+               1, 5, 3.0, 1),
+    "vec": ([1000, 2000], [cfg(m, p, v) for v in ("scalar", "sse2-vec", "avx2")
+                           for m, p in [("seq", 1)] + [("omp", q) for q in (1, 2, 4, 8)]], 1, 5, 3.0, 1),
 }
 
-RAW_FIELDS = ["campaign", "run_id", "pass", "order", "method", "numeric_type", "n", "block_size", "threads_requested",
+RAW_FIELDS = ["campaign", "run_id", "pass", "order", "method", "variant", "numeric_type", "n", "block_size",
+              "threads_requested",
               "phase", "repetition", "batch_size", "time_per_mult_s", "checksum"]
-RUN_FIELDS = ["campaign", "run_id", "pass", "order", "method", "numeric_type", "n", "block_size", "threads_requested",
+RUN_FIELDS = ["campaign", "run_id", "pass", "order", "method", "variant", "numeric_type", "n", "block_size",
+              "threads_requested",
               "team_size", "working_threads", "distinct_os_threads", "os_threads_after", "oversubscribed", "status",
               "reason", "warmup_planned", "reps_planned", "warmup_completed", "reps_completed", "batch_size",
               "limit_sample_s", "limit_mem_bytes", "predicted_bytes", "rss_after_load_bytes", "maxrss_bytes",
@@ -180,7 +194,7 @@ def known_seq_sha(runs_path):
     if runs_path.exists():
         with open(runs_path) as f:
             for r in csv.DictReader(f):
-                if r["method"] == "seq" and r["status"] == "ok" and r["sha256_C"]:
+                if r["method"] == "seq" and r["variant"] == "sse2" and r["status"] == "ok" and r["sha256_C"]:
                     out[int(r["n"])] = r["sha256_C"]
     return out
 
@@ -205,18 +219,18 @@ def main():
     for n in sizes:
         order = list(configs)
         random.Random(SEED + 1000 * pass_no + n).shuffle(order)
-        # the sequential baseline goes first so that its SHA-256 is known when the others are checked
-        if ("seq", 1) in order and n not in seq_sha:
-            order.remove(("seq", 1)); order.insert(0, ("seq", 1))
-        for k, (method, p) in enumerate(order):
-            run_id = "%s:%s:n%d:p%d:bs%d:pass%d" % (args.campaign, method, n, p, BS, pass_no)
+        # the primary sequential baseline goes first so that its SHA-256 is known when the others are checked
+        if cfg("seq", 1) in order and n not in seq_sha:
+            order.remove(cfg("seq", 1)); order.insert(0, cfg("seq", 1))
+        for k, (method, p, variant, bs) in enumerate(order):
+            run_id = "%s:%s:%s:n%d:p%d:bs%d:pass%d" % (args.campaign, method, variant, n, p, bs, pass_no)
             if run_id in done:
                 print("skip", run_id, flush=True)
                 continue
             batch = batch_for(n)
             predicted = 3 * 8 * n * n
             row = dict(campaign=args.campaign, run_id=run_id, **{"pass": pass_no}, order=k, method=method,
-                       numeric_type="float64", n=n, block_size=BS, threads_requested=p,
+                       variant=variant, numeric_type="float64", n=n, block_size=bs, threads_requested=p,
                        oversubscribed=p > logical, warmup_planned=warmup, reps_planned=reps, batch_size=batch,
                        limit_sample_s=T_SAMPLE, limit_mem_bytes=MEM_BYTES, predicted_bytes=predicted,
                        start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"))
@@ -228,8 +242,8 @@ def main():
             time.sleep(pause)
             dump = tempfile.mktemp(prefix="c3_", suffix=".bin")
             env = dict(os.environ, LC_ALL="C", OMP_NUM_THREADS=str(p), OMP_DYNAMIC="false", OMP_DISPLAY_ENV="TRUE")
-            cmd = [str(EXE), method, str(n), str(reps), str(warmup), str(batch), str(DATA / ("A_n%d.bin" % n)),
-                   str(DATA / ("B_n%d.bin" % n)), dump, str(BS), str(p)]
+            cmd = [str(VARIANTS[variant]), method, str(n), str(reps), str(warmup), str(batch), str(DATA / ("A_n%d.bin" % n)),
+                   str(DATA / ("B_n%d.bin" % n)), dump, str(bs), str(p)]
             row["cpu_speed_limit_before"] = cpu_speed_limit()
             lines, status, reason, wall, rss_max, rc, err = execute(cmd, env)
             row["cpu_speed_limit_after"] = cpu_speed_limit()
@@ -250,7 +264,7 @@ def main():
             if status == "ok":
                 tol = 2 * gamma(n)
                 rel, sha = validate(dump, n, ref)
-                if method == "seq":
+                if method == "seq" and variant == "sse2" and bs == BS:
                     seq_sha[n] = sha
                 row.update(max_rel_err="%.3e" % rel, rtol_used="%.3e" % tol, sha256_C=sha,
                            correctness="pass" if rel <= tol else "FAIL",
@@ -258,14 +272,14 @@ def main():
             if os.path.exists(dump):
                 os.unlink(dump)
             samples = [dict(campaign=args.campaign, run_id=run_id, **{"pass": pass_no}, order=k, method=method,
-                            numeric_type="float64", n=n, block_size=BS, threads_requested=p, phase=ph,
+                            variant=variant, numeric_type="float64", n=n, block_size=bs, threads_requested=p, phase=ph,
                             repetition=i, batch_size=batch, time_per_mult_s="%.9e" % t, checksum="%.17g" % c)
                        for ph, key in (("warmup", "warmup"), ("measured", "rep")) for i, t, c in out[key]]
             append(raw_path, RAW_FIELDS, samples)
             append(runs_path, RUN_FIELDS, [row])
             med = sorted(t for _, t, _ in out["rep"])[len(out["rep"]) // 2] if out["rep"] else float("nan")
-            print("%-6s n=%-5d p=%-2d %-8s median=%.4g s  correct=%s bitwise=%s  speed_limit=%s->%s  (%.0f s elapsed)"
-                  % (method, n, p, status, med, row.get("correctness", ""), row.get("bitwise_equal_seq", ""),
+            print("%-6s %-8s bs=%-3d n=%-5d p=%-2d %-8s median=%.4g s  correct=%s bitwise=%s  speed_limit=%s->%s  (%.0f s elapsed)"
+                  % (method, variant, bs, n, p, status, med, row.get("correctness", ""), row.get("bitwise_equal_seq", ""),
                      row["cpu_speed_limit_before"], row["cpu_speed_limit_after"], time.monotonic() - t_campaign),
                   flush=True)
     print("campaign %s finished in %.1f min" % (args.campaign, (time.monotonic() - t_campaign) / 60))

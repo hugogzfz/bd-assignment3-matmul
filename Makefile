@@ -10,7 +10,7 @@ CFLAGS   ?= -O2 -std=c11 -ffp-contract=off -Wall -Wextra
 OMPFLAGS  = -Xpreprocessor -fopenmp -I$(OMP)/include -L$(OMP)/lib -lomp
 SIZES    := 100 250 500 1000 1500 2000 3000 4000
 
-.PHONY: all venv build inputs test env bench-quick pilot bench analyze report clean
+.PHONY: all venv build build-vec inputs test env bench-quick pilot bench analyze vecinfo report clean
 
 all: build inputs test bench analyze report
 
@@ -21,11 +21,21 @@ build:
 	mkdir -p build
 	$(CC) $(CFLAGS) $(OMPFLAGS) -o build/matmul3 src/c/matmul3.c
 
+# Optional vectorisation extension: same source and flags, only the SIMD code generation changes.
+#   scalar: auto-vectorisation disabled; sse2: default x86-64 target (identical to build/matmul3); avx2: 256-bit AVX2.
+VECBASE   = -O2 -std=c11 -ffp-contract=off -Wall -Wextra
+build-vec:
+	mkdir -p build/vec
+	$(CC) $(VECBASE) -fno-vectorize -fno-slp-vectorize $(OMPFLAGS) -o build/vec/matmul3_scalar src/c/matmul3.c
+	$(CC) $(VECBASE) $(OMPFLAGS) -o build/vec/matmul3_sse2 src/c/matmul3.c
+	$(CC) $(VECBASE) -mavx2 $(OMPFLAGS) -o build/vec/matmul3_avx2 src/c/matmul3.c
+
 inputs:
 	$(PY) scripts/gen_inputs.py $(SIZES)
 
-test: build
+test: build build-vec
 	$(PY) scripts/test_correctness.py
+	for v in scalar sse2 avx2; do MATMUL_EXE=build/vec/matmul3_$$v TEST_CSV=results/correctness_tests_$$v.csv $(PY) scripts/test_correctness.py || exit 1; done
 
 env:
 	$(PY) scripts/env_info.py > /dev/null
@@ -45,6 +55,8 @@ bench: build inputs test env
 	$(PY) scripts/run_benchmarks.py --campaign large --resume
 	$(PY) scripts/run_benchmarks.py --campaign ijk   --resume
 	$(PY) scripts/run_benchmarks.py --campaign pass2 --resume
+	$(PY) scripts/run_benchmarks.py --campaign bsweep --resume
+	$(PY) scripts/run_benchmarks.py --campaign vec --resume
 
 analyze:
 	$(PY) scripts/analyze.py
