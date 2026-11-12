@@ -1,0 +1,128 @@
+\section{Introduction and objective}
+Assignments~1 and~2 measured sequential dense matrix multiplication; the fastest sequential method found was a
+cache-blocked i-k-j kernel with tile $b=96$ \cite{a2}. Its outer loop over rows of $C$ is naturally parallel, because
+every row of $C=AB$ depends only on one row of $A$ and on the whole of $B$. This study asks:
+
+\begin{quote}
+\emph{On a 4-core / 8-thread laptop CPU, how do runtime, speedup and efficiency of the blocked dense \texttt{float64}
+multiplication change with the number of OpenMP threads $p$, and from which matrix size $n$ does parallel execution pay off?}
+\end{quote}
+
+The factor changed is the thread count $p\in\{1,2,3,4,6,8,16\}$ (16 exceeds the 8 hardware threads: oversubscription),
+crossed with $n\in\{100,250,500,1000,1500,2000,3000,4000\}$. The outcomes are time per multiplication, peak resident memory,
+speedup $S(p)=T_{seq}(n)/T_p(n)$ and efficiency $E(p)=S(p)/p$, all computed from \textbf{medians}.
+An optional, separate experiment compares scalar, SSE2 and AVX2 code generation of the same source at fixed thread counts.
+
+\paragraph{Hypotheses (fixed before any measurement of the campaign).}
+\begin{enumerate}[label=\textbf{H\arabic*}]
+\item For $n\ge1000$, $S(p)$ grows almost linearly up to the 4 physical cores, with $E(4)\ge0.7$; it stays below 4 partly
+because the single-core turbo frequency is higher than the all-core one.
+\item Going from 4 to 8 threads (Hyper-Threading) adds little, between 0 and $30\%$, because the two hardware threads
+of a core share its floating-point units; $E(8)<E(4)$.
+\item With $p=16$ (oversubscription) there is no gain over $p=8$ and the time is slightly worse.
+\item For small $n$ ($\le250$, kernel below about 1~ms) fork/join and scheduling costs dominate: $S(4)<2$, low efficiency, and
+there is a size threshold below which parallel execution does not pay off.
+\item The parallel version with one thread takes the same time as the sequential baseline within $\pm5\%$ for $n\ge500$.
+\item Peak resident memory is $\approx 3\cdot8n^2$ bytes plus a constant and does not depend on $p$.
+\item (Optional extension) With one thread, the SIMD builds are faster than the scalar one (AVX2 $>$ SSE2 $>$ scalar);
+with many threads the relative SIMD gain shrinks somewhat.
+\end{enumerate}
+
+\section{Background}
+\textbf{Blocking.} Tiling the three loops so that a $b\times b$ working set of $A$, $B$ and $C$ is reused from cache reduces
+main-memory traffic \cite{lam,goto}; Assignment~2 found $b=96$ best among the tested tiles on its machine \cite{a2}.
+\textbf{Shared-memory parallelism.} OpenMP creates a team of threads for a \texttt{parallel} region, which ends with an implicit
+barrier \cite{openmp}. If a fraction $s$ of the work is serial, Amdahl's argument bounds the speedup by $1/s$ \cite{amdahl};
+fork/join, load imbalance and contention for shared resources (L3 cache, memory bandwidth, the floating-point units of a
+core shared by its two hardware threads under Hyper-Threading \cite{marr}) reduce efficiency further. The roofline model
+relates attainable throughput to arithmetic intensity and memory bandwidth \cite{roofline}; blocked multiplication has high
+intensity, so it is expected to be compute-bound rather than bandwidth-bound. \textbf{Turbo frequency.} The i7-6820HQ has
+a base clock of 2.7~GHz and a maximum turbo clock of 3.6~GHz \cite{nbc}; a single active core can run faster than four, so the
+ideal $S(p)=p$ is not attainable even for perfectly parallel work. \textbf{Vectorisation.} LLVM's loop vectoriser turns the
+contiguous inner $j$ loop into packed SIMD instructions \cite{llvmvec}; with FMA contraction disabled, each element of $C$ still
+receives the same additions in the same order, so results stay bit-identical \cite{higham}. \textbf{Reporting.} Medians,
+IQRs and speedups from a stated baseline follow the recommendations of \cite{hoefler}.
+
+\section{Methodology}
+\subsection{Implementations}
+All code is C11 in one source file (\texttt{src/c/matmul3.c}); matrices are row-major \texttt{float64} arrays.
+\begin{itemize}
+\item \textbf{\texttt{seq} (equivalent baseline).} The blocked kernel of Assignment~2 \cite{a2} (tile $b=96$, i-k-j order inside
+a tile), generalised only to work on a range of rows $[r_0,r_1)$ of $C$; the baseline calls it with $[0,n)$, which is exactly the
+Assignment~2 kernel. It never enters an OpenMP region and creates no thread (checked: 1 OS thread).
+\item \textbf{\texttt{omp} (parallel).} One \texttt{\#pragma omp parallel num\_threads(p)} region; thread $t$ of $q$ computes the
+contiguous rows $[\lfloor nt/q\rfloor,\lfloor n(t+1)/q\rfloor)$ of $C$ with the same kernel. Each element of $C$ is written by exactly
+one thread, $A$ and $B$ are only read, so there are no data races and no locks; the only synchronisation is the implicit final barrier.
+Rows are split evenly instead of distributing $96$-row tiles, which would leave threads idle (e.g.\ $n=1000$ has only 11 tile rows for 8 threads).
+\item \textbf{\texttt{ijk} (reference only).} The unchanged i-j-k kernel of Assignment~1 \cite{a1}, run sequentially at $n=500,1000$
+to place the study relative to the basic algorithm. It does not replace the equivalent baseline.
+\end{itemize}
+Because the summation order over $k$ for every $C_{ij}$ is identical in all three kernels and for every $p$, and FMA contraction is
+disabled, all methods must return \emph{bit-identical} products; this is tested and checked in every benchmark run.
+
+\textbf{Build.} Apple clang 14.0.0 with Homebrew \texttt{libomp} 23.1.5 (Apple clang ships without an OpenMP runtime):
+\\\hspace*{1.5em}\texttt{clang -O2 -std=c11 -ffp-contract=off -Xpreprocessor -fopenmp}\\\hspace*{1.5em}\texttt{-I\$(brew --prefix libomp)/include -L\$(brew --prefix libomp)/lib -lomp}.\\
+No \texttt{-march=native} and no \texttt{-ffast-math}, as in Assignments~1--2. At \texttt{-O2} clang already vectorises the inner loop with
+128-bit SSE2 instructions; this primary build is the ``SSE2'' build of the extension (byte-identical binary).
+
+\textbf{Thread control.} Each run sets \texttt{OMP\_NUM\_THREADS}$=p$ and \texttt{OMP\_DYNAMIC=false}; the runtime settings printed by
+\texttt{OMP\_DISPLAY\_ENV} are stored per run (\texttt{OMP\_PROC\_BIND=false}, \texttt{OMP\_WAIT\_POLICY=PASSIVE}, libomp defaults). The
+program reports, for the last call, the OpenMP team size, how many threads received rows, how many \emph{distinct OS thread ids} executed
+the team (\texttt{pthread\_threadid\_np}) and the number of OS threads of the process (\texttt{task\_threads}). The C code calls no numerical
+library; NumPy, used only for validation outside the measured processes, runs with \texttt{OPENBLAS\_NUM\_THREADS=1}.
+\textbf{Affinity:} macOS offers no thread-pinning interface (the Mach affinity policy is only a hint) and libomp does not support binding on
+macOS, so threads are \emph{not pinned}; the OS scheduler places them. This is a limitation of the platform, recorded in \texttt{environment.json}.
+
+\subsection{Inputs and environment}
+The dense inputs are the Assignment~1/2 matrices: uniform $[0,1)$ \texttt{float64} from NumPy's \texttt{default\_rng} seeded with
+$[20261012, n, w]$ ($w=0$ for $A$, $1$ for $B$), written as little-endian binary files. \texttt{gen\_inputs.py} regenerates them and verifies each SHA-256
+against the digests of Assignment~2 (all 16 files identical). Table~\ref{tab:env} summarises the machine. The laptop ran on mains power with
+all other applications closed, under \texttt{caffeinate -i}.
+
+\begin{table}[!htb]\centering\small
+\caption{Environment (from \texttt{results/environment.json}, recorded with \texttt{sysctl}, \texttt{sw\_vers}, \texttt{clang --version}).}
+\label{tab:env}\input{tables/env}
+\end{table}
+
+\subsection{Correctness checks before and during benchmarking}
+\texttt{test\_correctness.py} runs \texttt{seq}, \texttt{ijk} and \texttt{omp} with $p\in\{1,2,3,4,7,8,16\}$ on: $1\times1$, $2\times2$ and
+$3\times3$ products with hand-computed answers, zero and identity matrices on both sides, an all-ones matrix, small-integer matrices (exact
+in \texttt{float64}), random matrices for $n\in\{5,17,64,95,96,97,100,191,250\}$ (below, at and above the tile size, not multiples of $p$),
+$n=3$ with more threads than rows, seven tile sizes, the reported thread counts, and repeated calls into the same output buffer.
+Random cases are compared with NumPy \cite{numpy} using the relative tolerance $2\gamma_n$, $\gamma_n=nu/(1-nu)$, $u=2^{-53}$: each element of
+$C$ is a length-$n$ dot product of non-negative values, whose forward error is bounded by $\gamma_n$ relative to the exact value for
+either summation order \cite{higham}, so two correct orders differ by at most about $2\gamma_n$. Every product is also compared
+\emph{bit for bit} with the \texttt{seq} result. The suite is run on the primary binary and on the three vectorisation builds
+(1404 = $4\times351$ checks in total, all passed). During the campaign every process dumps its last product, which the driver validates against
+NumPy with $2\gamma_n$ and whose SHA-256 is compared with that of the sequential baseline of the same $n$.
+
+\subsection{Measurement protocol and budgets}
+\begin{itemize}
+\item \textbf{Timer and boundary.} \texttt{clock\_gettime(CLOCK\_MONOTONIC)} around the multiplication call only. Inside: zero-filling
+$C$ (required by the i-k-j update) and, for \texttt{omp}, the fork/join of the thread team. Outside: reading the input files, allocating
+and page-touching $C$, checksum, dump and validation. One process per configuration.
+\item \textbf{Repetitions.} 1 warm-up (recorded in the raw CSV, excluded from the statistics; it also lets the OpenMP runtime create its
+thread pool) and 5 measured samples; 3 samples at $n=4000$ to keep the campaign within its time budget. Small products are batched so
+that a sequential sample lasts at least about 0.2~s (batch sizes 607, 39 and 5 for $n=100,250,500$); the reported value is time per
+multiplication. Statistics: median and interquartile range (IQR, linear-interpolation quartiles). Speedup and efficiency use medians;
+an IQR-based range $[Q_1(T_{seq})/Q_3(T_p),\,Q_3(T_{seq})/Q_1(T_p)]$ is reported as a rough uncertainty.
+\item \textbf{Order, pauses and temperature.} Within each $n$ the configurations run in a seeded random order (the sequential baseline first,
+so that its SHA-256 is known), with a 3~s pause between processes. Before and after each process the driver stores the
+\texttt{CPU\_Speed\_Limit} reported by \texttt{pmset -g therm} (100 = no thermal limit). To estimate drift and between-process variability,
+the whole thread sweep at $n=2000$ is \textbf{repeated in a second pass at the end} of the campaign.
+\item \textbf{Memory.} Peak resident set size of the process from \texttt{getrusage(RUSAGE\_SELF).ru\_maxrss}, which macOS reports in
+\emph{bytes}; it includes inputs, output, code and thread stacks. The driver also polls the RSS with \texttt{ps} every 0.5~s to enforce the budget.
+\item \textbf{Budgets (declared before the campaign).} At most 120~s per timed sample and 4~GiB resident memory per process; a configuration
+whose $3\cdot8n^2$ array storage exceeds the memory budget is not attempted. Violations would be recorded as \texttt{timeout} /
+\texttt{memory\_limit}, never with an invented time. The whole campaign was budgeted at 1--1.5~h; a 37~s pilot (disclosed here, not
+reported) was used only to estimate its duration.
+\end{itemize}
+
+\subsection{Optional vectorisation extension}
+The same source is compiled three times with the base flags above, changing only SIMD code generation: \textbf{scalar}
+(\texttt{-fno-vectorize -fno-slp-vectorize}), \textbf{SSE2} (default \texttt{-O2}, 128-bit, 2 doubles per instruction) and \textbf{AVX2}
+(\texttt{-mavx2}, 256-bit, 4 doubles). FMA stays disabled (\texttt{-ffp-contract=off}), so the three builds must give bit-identical
+results, which is tested. Evidence of vectorisation comes from the compiler (\texttt{-Rpass=loop-vectorize}) and from the disassembly of
+the kernel (\texttt{otool -tv}): Table~\ref{tab:vecev}. The campaign \texttt{vec} measures each build with \texttt{seq} and \texttt{omp}
+$p\in\{1,2,4,8\}$ at $n=1000$ and $2000$ under the same protocol, so that SIMD effects (same $p$, different build) are separated from
+thread effects (same build, different $p$).

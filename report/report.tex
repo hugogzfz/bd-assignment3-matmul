@@ -1,0 +1,37 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\captionsetup{font=small,labelfont=bf}
+\setlist{itemsep=2pt,topsep=3pt}
+\setlength{\parskip}{3pt}
+\setlength{\emergencystretch}{4em}
+\graphicspath{{../figures/}}
+\newcommand{\repourl}{\url{https://github.com/hugogzfz/bd-assignment3-matmul}}
+
+\title{\textbf{Assignment 3: How Thread Count Affects a Shared-Memory Blocked\\Matrix Multiplication (OpenMP), with Optional Vectorisation}}
+\author{Hugo Gonz\'alez Fern\'andez\\[2pt]
+Big Data \,$\cdot$\, Bachelor’s Degree in Data Science and Engineering\\
+Universidad de Las Palmas de Gran Canaria\\
+Academic year 2026--2027 \,$\cdot$\, Individual Assignment 3\\[2pt]
+Code repository: \repourl}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\input{sec_abstract}
+\input{sec_intro_method}
+\input{sec_results}
+\input{sec_discussion}
+
+\end{document}

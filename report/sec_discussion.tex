@@ -1,0 +1,109 @@
+\section{Discussion}
+\subsection{Answer to the research question}
+On this 4-core / 8-thread laptop, the OpenMP version of the blocked kernel scales almost linearly up to the number of \emph{physical} cores
+and then stops: $S(4)=3.40$--$3.95$ ($E(4)=0.85$--$0.99$) for every tested size, while 6, 8 or 16 threads change the speedup by at most a few
+percent for $n\ge500$. Within the tested range, parallel execution paid off at \emph{every} size, down to $n=100$ (0.31~ms per sequential
+product), where 4 threads still gave $S=3.54$. The practical answer is therefore: use as many threads as physical cores; more threads
+cost efficiency without a reliable gain, and the size threshold below which parallelism does not pay lies below $n=100$ for this
+implementation and timing boundary.
+
+\subsection{Hypotheses against the evidence}
+\begin{itemize}
+\item \textbf{H1 supported.} $E(4)\ge0.85$ for all $n$, above the predicted 0.7, and $S(4)\le3.95$ for every size. Two observations
+support the frequency explanation without proving it (no frequency was measured): runs with $p\ge3$ slow down by 4--8\% during a process at
+$n=3000$--$4000$ while single-thread runs do not (Table~\ref{tab:drift}), as expected if the clock falls under sustained all-core load (the chip's
+maximum turbo clock, 3.6~GHz, is well above its 2.7~GHz base \cite{nbc}); and the slowdown appears although \texttt{CPU\_Speed\_Limit} stays at
+100, i.e.\ without OS-level throttling. Load imbalance cannot explain
+the gap: rows are split to within one row and every thread receives rows.
+\item \textbf{H2 supported.} $S(8)/S(4)=0.85$--$1.06$ and $E(8)\le0.52<E(4)$. The vectorisation campaign adds evidence for the mechanism
+\cite{marr}: Hyper-Threading raised the throughput of the scalar build by 23\% at $n=1000$, whose single thread leaves execution
+units idle, but not that of the SSE2 build (+2\%) and slightly lowered that of the AVX2 build ($-5\%$), whose single thread already keeps the
+floating-point units of a core busy.
+\item \textbf{H3 partly supported.} Oversubscription never gave a consistent gain over $p=8$ ($S(16)/S(8)=0.74$--$1.31$, with the high
+value inside a 24--28\% IQR) and clearly hurt only at $n=100$ ($-26\%$), where each thread's share (6--7 rows, about 20~$\mu$s of work) is
+comparable to the cost of time-slicing 16 threads on 8 contexts and waiting at the barrier for the last one. For larger $n$ the cost was
+not distinguishable from the noise.
+\item \textbf{H4 rejected} in the tested range. The prediction of $S(4)<2$ for $n\le250$ was wrong: $S(4)=3.54$ and $3.56$. The OpenMP runtime keeps
+its thread pool between parallel regions, so after the warm-up each region only has to restart the existing threads and synchronise at the
+final barrier; the measurements show that this costs far less than the 0.31~ms of work at $n=100$. This conclusion is bound to the timing boundary: products were timed in batches
+after a warm-up; a single cold call, which includes the creation of the threads, was not measured separately, and sizes below 100 were not tested.
+\item \textbf{H5 supported within the noise.} The one-thread parallel run differs from the baseline by $-3\%$ to $+2\%$ for six sizes; the two
+exceptions ($-6$ to $-7\%$) go in the \emph{opposite} direction of an overhead and coincide with the noisiest sequential runs. Any OpenMP overhead
+with one thread is smaller than the between-process variability ($\approx\pm5$--$10\%$, Section~\ref{sec:var}).
+\item \textbf{H6 supported.} Peak RSS = $3\cdot8n^2$ + 0.7--0.8~MiB (sequential) + 0.4--0.6~MiB with OpenMP, independent of $p$ within 0.34~MiB.
+Each thread only allocates a stack and runtime bookkeeping; the matrices are shared, not copied.
+\item \textbf{H7 partly supported.} AVX2 $>$ SSE2 $>$ scalar at every $p$ and $n$, as predicted. The SIMD gain shrank with threads only for AVX2 at
+$n=2000$ (4.40 to 4.01); at $n=1000$ it was not monotonic. The gains exceed the vector widths (2.2--2.9 for width 2, 3.9--5.1 for width 4). A
+plausible explanation, consistent with the compiler remarks, is that the vectoriser also interleaves the loop (2 or 4 independent vectors per
+iteration), so loop control, address arithmetic and load instructions are spread over 4--16 multiply--adds instead of one; without hardware
+counters this remains an explanation, not a measurement.
+\end{itemize}
+
+\subsection{Why the speedup saturates at the physical cores}
+With FMA disabled, each update $c_{ij}\mathrel{+}=a_{ik}b_{kj}$ needs one multiply and one add. The blocked kernel keeps its tiles in the
+private L1/L2 caches \cite{lam,goto}, so it is limited by those floating-point units and by load bandwidth, not by main memory: the
+sequential rate is almost constant (5.7--6.6~GFLOP/s) from $n=100$ (all three matrices fit in cache) to $n=4000$ (367~MiB), and the parallel rate is also flat
+(21--24~GFLOP/s with $p=4$). In roofline terms \cite{roofline} the kernel stays under the compute roof for every size, which is why the speedup does
+not depend on $n$ and why adding hardware threads that share those units (H2) or software threads that share the contexts (H3) cannot help.
+The tile-size check points the same way: $S(4)$ was 3.54--3.86 for every tile from 32 to 192.
+
+\subsection{Limitations}
+\begin{itemize}
+\item \textbf{One machine and one OS.} The results describe one Intel Skylake laptop under macOS; another CPU (more cores, Apple Silicon with
+performance and efficiency cores, different turbo policy) can change the shape of the curves.
+\item \textbf{No affinity, no counters, no frequency.} Threads could not be pinned, so their placement on cores and hardware threads was chosen by the
+scheduler and may differ between runs. Frequency, cache misses and port usage were not measured (\texttt{powermetrics} needs administrator rights);
+statements about turbo, caches and execution units are supported indirectly.
+\item \textbf{Between-process and between-period variability.} The same configuration differed by up to 17\% between the two passes, much more than the
+within-process IQRs. Absolute times should be read with about $\pm10\%$ uncertainty; speedups, whose two terms were measured minutes apart at the
+same size, were more stable (largest change 0.36 for $p=16$). The cause of the slower first part of the campaign is unknown. With 5 samples per
+configuration (3 at $n=4000$) quartiles are coarse.
+\item \textbf{Timing boundary.} Batches after a warm-up measure steady-state cost per product; the cost of the first parallel region (thread creation)
+is only present in the warm-up samples and is not analysed.
+\item \textbf{Tile size.} $b=96$ was kept for comparability with Assignment~2, although $b=64$ (sequential) and $b=32$ (4 threads) were 5--11\% faster here.
+\end{itemize}
+
+\section{Conclusions}
+Within the tested scope (blocked i-k-j kernel, $b=96$, \texttt{float64}, $n=100$--$4000$, one i7-6820HQ laptop under macOS, steady-state timing):
+\begin{itemize}
+\item Row-partitioned OpenMP parallelisation of the Assignment~2 kernel is correct and race-free: all 110 measured products and 1404 test products are
+bit-identical to the sequential baseline, and the reported thread counts match the real OS threads.
+\item The speedup grows almost linearly up to the 4 physical cores ($S(4)=3.4$--$4.0$, $E(4)=0.85$--$0.99$) and saturates there; Hyper-Threading
+($p=8$) and oversubscription ($p=16$) add no reliable gain for this compute-bound kernel and halve or quarter the efficiency.
+\item Parallel execution already paid off at $n=100$; the break-even size, if any, is below the tested range for this timing boundary.
+\item The OpenMP version with one thread has no overhead measurable above the $\pm5$--$10\%$ variability between processes, and memory does not grow with the
+number of threads.
+\item (Extension) SIMD code generation and threads multiply: AVX2 is 3.9--5.1$\times$ faster than scalar code at equal thread count, and AVX2 with
+4 threads is $14.9\times$ faster than the scalar sequential version at $n=2000$ (43.9~GFLOP/s).
+\end{itemize}
+\textbf{Unresolved:} the size at which parallelism stops paying (below $n=100$, or for single cold calls), the cause of the period-to-period
+variability, and a direct measurement of clock frequency and cache behaviour, which would need hardware counters and administrator access.
+
+\section{Use of generative AI}
+In line with the course policy, the use of AI is disclosed: the tool was \textbf{Claude Code} (Anthropic). It was used for planning the experimental
+design and hypotheses, writing the C implementation (adapting the Assignment~2 kernel), the benchmark driver, the test, analysis, plotting and
+vectorisation-evidence scripts, the README, a first draft of this report and the oral-defence notes. It also searched for and checked the bibliographic
+data of the new references. The author reviewed the code and the design decisions, ran and supervised the measurement campaign, checked that every
+number in this report comes from the raw CSV files, and is responsible for the conclusions. No result or reference was produced without being
+checked against the measurements or the cited source.
+
+\section*{Reproducibility materials}
+Repository: \repourl{} (code, Makefile, README with exact commands, raw CSV files, environment record, analysis scripts and figures). Reused material:
+the blocked kernel, input generator, test and driver structure of \cite{a2} (commit \texttt{1aab86d}) and the i-j-k kernel and inputs of \cite{a1}
+(commit \texttt{101af1c}); the inputs are regenerated and verified byte for byte with the SHA-256 digests in \texttt{data/manifest.json}.
+
+\begin{thebibliography}{99}\small
+\bibitem{a1} H.~Gonz\'alez Fern\'andez, ``Assignment 1: How runtime and memory scale in the basic triple-loop matrix multiplication in C, Java and Python,'' Big Data, Univ. Las Palmas de Gran Canaria, Oct. 2026. Code: \url{https://github.com/hugogzfz/bd-assignment1-matmul}, commit 101af1c.
+\bibitem{a2} H.~Gonz\'alez Fern\'andez, ``Assignment 2: Optimised dense matrix multiplication and sparse matrices in C,'' Big Data, Univ. Las Palmas de Gran Canaria, Oct. 2026. Code: \url{https://github.com/hugogzfz/bd-assignment2-matmul}, commit 1aab86d.
+\bibitem{lam} M.~D.~Lam, E.~E.~Rothberg and M.~E.~Wolf, ``The cache performance and optimizations of blocked algorithms,'' in \emph{Proc. 4th Int. Conf. Architectural Support for Programming Languages and Operating Systems (ASPLOS IV)}, Santa Clara, CA, USA, 1991, pp.~63--74.
+\bibitem{goto} K.~Goto and R.~A.~van de Geijn, ``Anatomy of high-performance matrix multiplication,'' \emph{ACM Trans. Math. Softw.}, vol.~34, no.~3, pp.~1--25, 2008.
+\bibitem{openmp} OpenMP Architecture Review Board, \emph{OpenMP Application Programming Interface, Version 5.2}, Nov. 2021. [Online]. Available: \url{https://www.openmp.org/specifications/}
+\bibitem{amdahl} G.~M.~Amdahl, ``Validity of the single processor approach to achieving large scale computing capabilities,'' in \emph{Proc. AFIPS Spring Joint Computer Conf.}, Atlantic City, NJ, USA, Apr. 1967, pp.~483--485, doi: 10.1145/1465482.1465560.
+\bibitem{marr} D.~T.~Marr, F.~Binns, D.~L.~Hill, G.~Hinton, D.~A.~Koufaty, J.~A.~Miller and M.~Upton, ``Hyper-Threading technology architecture and microarchitecture,'' \emph{Intel Technology Journal}, vol.~6, no.~1, pp.~4--15, Feb. 2002.
+\bibitem{roofline} S.~Williams, A.~Waterman and D.~Patterson, ``Roofline: An insightful visual performance model for multicore architectures,'' \emph{Commun. ACM}, vol.~52, no.~4, pp.~65--76, Apr. 2009, doi: 10.1145/1498765.1498785.
+\bibitem{nbc} ``Intel Core i7-6820HQ notebook processor,'' Notebookcheck.net. [Online]. Available: \url{https://www.notebookcheck.net/Intel-Core-i7-6820HQ-Notebook-Processor.149416.0.html}. Accessed: Nov.~12, 2026.
+\bibitem{llvmvec} LLVM Project, ``Auto-vectorization in LLVM,'' LLVM documentation. [Online]. Available: \url{https://llvm.org/docs/Vectorizers.html}. Accessed: Nov.~12, 2026.
+\bibitem{higham} N.~J.~Higham, \emph{Accuracy and Stability of Numerical Algorithms}, 2nd~ed. Philadelphia, PA, USA: SIAM, 2002.
+\bibitem{hoefler} T.~Hoefler and R.~Belli, ``Scientific benchmarking of parallel computing systems: Twelve ways to tell the masses when reporting performance results,'' in \emph{Proc. Int. Conf. High Performance Computing, Networking, Storage and Analysis (SC '15)}, Austin, TX, USA, 2015, Art.~no.~73.
+\bibitem{numpy} C.~R.~Harris \emph{et al.}, ``Array programming with NumPy,'' \emph{Nature}, vol.~585, pp.~357--362, 2020, doi: 10.1038/s41586-020-2649-2.
+\end{thebibliography}

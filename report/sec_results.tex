@@ -1,0 +1,182 @@
+\section{Results}
+All numbers below come from \texttt{results/runs.csv} and \texttt{results/raw\_measurements.csv} through \texttt{scripts/analyze.py}.
+Times are medians of the measured samples, with the relative IQR (IQR/median) in parentheses.
+
+\subsection{Correctness, thread counts and campaign conditions}
+The campaign ran 110 processes in 21~minutes (start times 19:47:59--20:08:41 UTC, 12 Nov.~2026) and collected 542 measured samples. All
+110 processes finished with status \texttt{ok}; no budget was reached, so the \textbf{largest attempted and largest feasible size is
+$n=4000$} (19.6~s per sequential multiplication, 367~MiB). Every product passed the NumPy check (largest relative error
+$8.5\times10^{-15}$, below $2\gamma_n$) and \textbf{all 110 products were bit-identical to the sequential baseline} of the same $n$,
+including every thread count, tile size and vector build. In all 88 \texttt{omp} processes the OpenMP team size and the number of
+distinct OS threads that executed it were equal to the requested $p$. \texttt{CPU\_Speed\_Limit} was 100 before and after every
+process (the OS never requested thermal throttling). The correctness suite (1404 checks: 351 on each of four binaries) reported no failure.
+
+\subsection{Runtime}
+Table~\ref{tab:time} and Fig.~\ref{fig:runtime} give the time per multiplication. The sequential baseline sustains 5.7--6.6~GFLOP/s
+($2n^3/T$) for all sizes, so its time grows as $n^3$ (a factor 62\,200 from $n=100$ to $4000$ for a factor $64\,000$ in $n^3$). The parallel
+version follows the same cubic trend shifted down by the speedup; four threads take 0.089~ms at $n=100$ and 5.75~s at $n=4000$.
+Variability within a process was small: relative IQRs were below 9\% in 56 of the 60 configurations; the four larger ones (13--28\%) are $p=3$ at $n=100$, $p=8$ and $16$ at
+$n=250$, and $p=8$ at $n=2000$.
+
+\begin{table}[!htb]\centering\footnotesize\setlength{\tabcolsep}{3pt}
+\caption{Time per multiplication, median (relative IQR) of 5 measured samples (3 at $n=4000$); campaigns \texttt{main} and \texttt{large}.
+Batches of 607, 39 and 5 multiplications for $n=100,250,500$. ``--'': not planned. $p=16$ is oversubscribed (8 hardware threads).}
+\label{tab:time}\resizebox{\linewidth}{!}{\input{tables/threads_time}}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.62\linewidth]{fig1_runtime}
+\caption{Median time per multiplication against $n$ (log--log) for the sequential baseline and selected thread counts; error bars are the IQR (mostly hidden by the markers).}
+\label{fig:runtime}
+\end{figure}
+
+\subsection{Speedup and efficiency}
+Table~\ref{tab:speedup} and Figs.~\ref{fig:speedup}--\ref{fig:svsn} show $S(p)=T_{seq}/T_p$ and $E(p)=S(p)/p$ from medians.
+\begin{itemize}
+\item \textbf{Up to the physical cores.} $S(2)=1.87$--$2.13$, $S(3)=2.81$--$3.17$ and $S(4)=3.40$--$3.95$ for every $n$; $E(4)=0.85$--$0.99$.
+\item \textbf{Beyond 4 threads.} Using the 8 hardware threads changes the speedup by a factor $S(8)/S(4)=0.85$--$1.06$ (Table~\ref{tab:best}); for
+$n\ge500$ the change is $-1\%$ to $+6\%$. $E(8)=0.38$--$0.52$. $p=6$ is never more than $2\%$ better than the better of $p=4$ and $p=8$.
+\item \textbf{Oversubscription.} $S(16)/S(8)=0.74$--$1.31$: no systematic gain; clear loss only at $n=100$ ($-26\%$); the $+31\%$ at $n=250$ coincides with
+relative IQRs of 24--28\% for $p=8$ and $p=16$.
+\item \textbf{Best configuration.} The highest median speedup per size is 3.52--4.19, reached with $p\in\{6,8,16\}$, but always within $7\%$ of $S(4)$
+except at $n=250$ (11\%, noisy).
+\item \textbf{Small sizes.} Even at $n=100$, where one sequential multiplication takes 0.31~ms, four threads give $S=3.54$ (IQR range 3.27--3.84).
+No tested size has $S(p)<1$ for any $p\ge2$ (Fig.~\ref{fig:svsn}).
+\end{itemize}
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Speedup / efficiency, $S(p)=T_{seq}/T_p$ and $E(p)=S(p)/p$, from medians.}
+\label{tab:speedup}\input{tables/threads_speedup}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.49\linewidth]{fig2_speedup}\hfill
+\includegraphics[width=0.49\linewidth]{fig3_efficiency}
+\caption{Speedup (left) and efficiency (right) against the number of threads, one line per $n$ (darker = larger). Dashed: ideal. Dotted: 4 physical cores and 8 logical processors; shaded: oversubscription.}
+\label{fig:speedup}
+\end{figure}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.6\linewidth]{fig4_speedup_vs_n}
+\caption{Speedup against $n$ for selected $p$. Bars: rough range $[Q_1(T_{seq})/Q_3(T_p),\,Q_3(T_{seq})/Q_1(T_p)]$.}
+\label{fig:svsn}
+\end{figure}
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Best median speedup per size, its IQR-based range and efficiency, and the effect of Hyper-Threading ($S(8)/S(4)$) and oversubscription ($S(16)/S(8)$).}
+\label{tab:best}\input{tables/best}
+\end{table}
+
+\textbf{Apparent superlinear values.} $E>1$ appears at $n=1500$ ($E(2)=1.06$, $E(3)=1.06$), $n=100$ ($E(2)=1.04$) and for $p=1$ at
+$n=100$, $1500$ and $3000$ ($S(1)=1.03$--$1.07$). They are not taken at face value: in each case the parallel run with \emph{one} thread---the
+same instructions on one core---is also faster than the sequential run (Table~\ref{tab:overhead}). Measured against the one-thread parallel
+run, $S_1(p)=T_{omp,1}/T_p$, the efficiencies are at most 1.00 for every $n$ and $p$: at $n=1500$, $S_1(2)=1.99$, $S_1(3)=2.96$, $S_1(4)=3.69$; at $n=100$,
+$S_1(2)=1.96$. The cause is therefore a slower sequential process at those sizes (between-process variability, Section~\ref{sec:var}), not a
+cache effect of the parallel version; the sequential runs at $n=100$ and $n=1500$ also have the two largest relative IQRs among the sequential runs (7.4\% and 5.0\%).
+
+\subsection{Overhead of the parallel version with one thread}
+Table~\ref{tab:overhead} compares \texttt{omp} with $p=1$ against \texttt{seq}. The ratio is within $\pm5\%$ for six of the eight sizes
+(0.970--1.017) and below $0.95$ at $n=100$ (0.939) and $n=1500$ (0.934), where the \emph{parallel} run is the faster one. No positive overhead of
+the OpenMP region larger than $2\%$ is visible at any size.
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Parallel version with one thread vs.\ sequential baseline: median (IQR) and ratio of medians.}
+\label{tab:overhead}\input{tables/overhead_p1}
+\end{table}
+
+\subsection{Memory}
+Peak resident memory (\texttt{ru\_maxrss}) is the array storage $3\cdot8n^2$ plus a small constant: 0.7--0.8~MiB above it for the sequential
+process and 0.4--0.6~MiB more for any parallel process (Table~\ref{tab:mem}, Fig.~\ref{fig:mem}). Across thread counts at a fixed $n$, the parallel
+values differ by at most 0.34~MiB (at $n=100$, between $p=1$ and $p=16$), i.e.\ memory does not grow with $p$ beyond thread stacks and runtime
+structures.
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Peak resident set size (MiB, \texttt{getrusage} \texttt{ru\_maxrss}, bytes on macOS) against the array storage $3\cdot 8n^2$.}
+\label{tab:mem}\input{tables/memory}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.55\linewidth]{fig5_memory}
+\caption{Peak resident memory per process against $n$; the parallel curves lie on top of the sequential one.}
+\label{fig:mem}
+\end{figure}
+
+\subsection{Variability between passes and within processes}\label{sec:var}
+The second pass at $n=2000$, run ten minutes after the first at the end of the campaign, was \textbf{faster for every configuration, by
+2.8--17.3\%} (median $-11\%$; Table~\ref{tab:pass2}, Fig.~\ref{fig:pass2}); it also had smaller IQRs (0.4--2.6\% against 0.9--13\%).
+Because sequential and parallel runs moved in the same direction, the speedups changed much less: $S(4)$ from 3.50 to 3.58, $S(8)$ from 3.55 to 3.78,
+$S(16)$ from 3.38 to 3.74. The same single-threaded computation at $n=2000$ took 2.64 and 2.68~s in the first pass, 2.42 and 2.38~s in the second,
+2.54~s in the tile sweep and 2.42--2.44~s in the vectorisation campaign: the slow interval is the first part of the campaign, not the end, so
+the difference is not progressive heating. Its cause could not be identified (no thermal limit was reported and no other application was open).
+Within single processes, the longest runs with $p\ge3$ became slower from sample to sample: at $n=3000$ the last sample took 4--8\% longer than the
+warm-up and at $n=4000$ 5--6\% longer, while one-thread runs changed by less than 3\% (Table~\ref{tab:drift}). At $n=2000$ (shorter runs) the
+changes have both signs ($-7$ to $+8\%$).
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Second pass at $n=2000$: medians (relative IQR), difference pass 2 vs.\ pass 1, and speedups of each pass.}
+\label{tab:pass2}\input{tables/pass2}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.6\linewidth]{fig6_pass2}
+\caption{Every measured sample at $n=2000$ in the first pass (main campaign) and in the second pass at the end of the campaign.}
+\label{fig:pass2}
+\end{figure}
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Within-process drift: last measured sample relative to the warm-up sample of the same process (\%), for the longest runs.}
+\label{tab:drift}\input{tables/drift}
+\end{table}
+
+\subsection{Reference comparisons}
+\textbf{Basic algorithm.} The unchanged Assignment~1 i-j-k kernel takes 140~ms at $n=500$ and 1.86~s at $n=1000$: $3.5\times$ and $5.8\times$
+slower than the blocked baseline and $13\times$ and $23\times$ slower than the parallel version with 8 threads (Table~\ref{tab:ijk}).
+\textbf{Tile size.} The tile $b=96$ was fixed before the campaign from Assignment~2. On this CPU a short check at $n=2000$ found $b=64$ fastest
+sequentially (2.26~s vs.\ 2.54~s for $b=96$) and $b=32$ fastest with 4 threads (628 vs.\ 660~ms); $S(4)$ stayed between 3.54 and 3.86 for all five
+tiles (Table~\ref{tab:bsweep}, Fig.~\ref{fig:bsweep}).
+
+\begin{table}[!htb]\centering\footnotesize
+\begin{minipage}{0.5\linewidth}\centering
+\caption{A1 i-j-k reference (sequential).}\label{tab:ijk}\resizebox{\linewidth}{!}{\input{tables/ijk}}
+\end{minipage}\hfill
+\begin{minipage}{0.45\linewidth}\centering
+\caption{Tile-size check, $n=2000$.}\label{tab:bsweep}\input{tables/bsweep}
+\end{minipage}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.48\linewidth]{fig8_bsweep}
+\caption{Time per multiplication against the tile size at $n=2000$ (campaign \texttt{bsweep}); error bars are the IQR.}
+\label{fig:bsweep}
+\end{figure}
+
+\subsection{Optional extension: vectorisation}
+\textbf{Evidence.} Clang reports the inner $j$ loop of the kernel (line 101) as ``not vectorized'' in the scalar build, ``vectorized loop
+(vectorization width: 2, interleaved count: 2)'' with SSE2 and ``(vectorization width: 4, interleaved count: 4)'' with AVX2. The disassembly of the
+kernel agrees (Table~\ref{tab:vecev}): the scalar build contains only scalar \texttt{mulsd}/\texttt{addsd}, the SSE2 build packed \texttt{mulpd}/\texttt{addpd}
+on 128-bit \texttt{xmm} registers, and the AVX2 build \texttt{vmulpd}/\texttt{vaddpd} on 256-bit \texttt{ymm} registers; no build contains FMA
+instructions. One scalar multiply and one scalar add remain in each build (in the vector builds, presumably the remainder iterations of the loop).
+
+\begin{table}[!htb]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\caption{Vectorisation evidence: instruction counts in the disassembly of \texttt{mul\_blocked\_rows} (\texttt{otool -tv}) and clang remark for the inner loop.}
+\label{tab:vecev}\resizebox{\linewidth}{!}{\input{tables/vecev}}
+\end{table}
+
+\textbf{Performance.} Table~\ref{tab:vec} and Fig.~\ref{fig:vec} cross the three builds with the thread counts. The bracketed factor is the
+\emph{SIMD gain} $T_{scalar}(p)/T_{build}(p)$ at the same $p$ and $n$, so it isolates code generation from thread count. SSE2 is 2.23--2.88$\times$
+faster than scalar code and AVX2 3.94--5.08$\times$ faster, at every $p$. Within each build, the thread speedup at $p=4$ is 3.09--3.56 (scalar),
+3.61--3.89 (SSE2) and 3.38--3.56 (AVX2). Going from 4 to 8 threads raises the throughput of the scalar build at $n=1000$ by 23\% (235 to 192~ms) but slightly
+slows the AVX2 build (46.2 to 48.6~ms at $n=1000$, 364 to 378~ms at $n=2000$). At $n=2000$ the AVX2 gain decreases from 4.40 (sequential) to
+4.01 ($p=8$); at $n=1000$ it does not decrease monotonically (5.08 at $p=4$). The fastest configuration, AVX2 with 4 threads, reaches
+43.9~GFLOP/s at $n=2000$, $14.9\times$ the scalar sequential time. All 30 products were bit-identical to the baseline.
+
+\begin{table}[!htb]\centering\footnotesize
+\caption{Vectorisation $\times$ threads (campaign \texttt{vec}): median time and [SIMD gain $T_{scalar}(p)/T(p)$]. The SSE2 build is byte-identical to the primary binary.}
+\label{tab:vec}\resizebox{0.9\linewidth}{!}{\input{tables/vec}}
+\end{table}
+
+\begin{figure}[!htb]\centering
+\includegraphics[width=0.85\linewidth]{fig7_vec}
+\caption{Throughput ($2n^3$/median time) of the parallel version for the three builds; vertical distance between curves = SIMD effect at fixed $p$, slope of each curve = thread effect for a fixed build.}
+\label{fig:vec}
+\end{figure}
