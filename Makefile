@@ -8,9 +8,9 @@ OMP      ?= $(shell brew --prefix libomp)
 # Same arithmetic as Assignments 1-2: -O2, no -march=native, FMA contraction disabled -> bit-identical results.
 CFLAGS   ?= -O2 -std=c11 -ffp-contract=off -Wall -Wextra
 OMPFLAGS  = -Xpreprocessor -fopenmp -I$(OMP)/include -L$(OMP)/lib -lomp
-SIZES    := 100 250 500 1000 1500 2000 3000 4000
+SIZES    := 16 32 64 100 250 500 1000 1500 2000 3000 4000
 
-.PHONY: all venv build build-vec inputs test env bench-quick pilot bench analyze vecinfo report package clean
+.PHONY: all venv build build-vec inputs test env bench-quick pilot bench bench-small analyze vecinfo report package clean
 
 all: build inputs test bench vecinfo analyze report
 
@@ -57,6 +57,10 @@ bench: build inputs test env
 	$(PY) scripts/run_benchmarks.py --campaign pass2 --resume
 	$(PY) scripts/run_benchmarks.py --campaign bsweep --resume
 	$(PY) scripts/run_benchmarks.py --campaign vec --resume
+
+# Supplementary small-n campaign, added after the main results (about 1-2 minutes).
+bench-small: build inputs
+	$(PY) scripts/run_benchmarks.py --campaign small --resume
 
 vecinfo: build-vec
 	$(PY) scripts/vec_evidence.py

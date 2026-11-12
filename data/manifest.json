@@ -35,6 +35,12 @@
       "n": 1500,
       "sha256": "6d3a3b5fa721731a4104d080a0ddf36cb0e611d1533e273a350a6cac9ab9a0af"
     },
+    "A_n16.bin": {
+      "bytes": 2048,
+      "kind": "dense-uniform",
+      "n": 16,
+      "sha256": "54b535f064128184bf07062666a454d6d2686425644f998023b5a8bf478942e0"
+    },
     "A_n2000.bin": {
       "bytes": 32000000,
       "identical_to_assignment1": true,
@@ -61,6 +67,12 @@
       "kind": "dense-uniform",
       "n": 3000,
       "sha256": "9fc9007f247a8f55e00678245063b28730bce256ddbded305cce8fd01b0caff7"
+    },
+    "A_n32.bin": {
+      "bytes": 8192,
+      "kind": "dense-uniform",
+      "n": 32,
+      "sha256": "c9690c37ed942803d36d8deedb61460bfe7bc6ac721523c048e7b0d5f0cc88a4"
     },
     "A_n4000.bin": {
       "bytes": 128000000,
@@ -93,6 +105,12 @@
       "kind": "dense-uniform",
       "n": 6000,
       "sha256": "352bab68eb2cb10a0602abc52d5f289e4293680162d719dec30fa0c9fa63c1f8"
+    },
+    "A_n64.bin": {
+      "bytes": 32768,
+      "kind": "dense-uniform",
+      "n": 64,
+      "sha256": "da8f7b625ac273be4b2869dbd0a8a6306cc1cba3b81fdc4aeec02505f3838323"
     },
     "A_n750.bin": {
       "bytes": 4500000,
@@ -141,6 +159,12 @@
       "n": 1500,
       "sha256": "b366cebd84556497d6c1cdcdd43fe341c28c8d5fbbe7f4ae9c414f581649405b"
     },
+    "B_n16.bin": {
+      "bytes": 2048,
+      "kind": "dense-uniform",
+      "n": 16,
+      "sha256": "bc8a327ebadb8a3f42aeb9687104c8f8d3d39af96cd47d8a06834d28779d87c8"
+    },
     "B_n2000.bin": {
       "bytes": 32000000,
       "identical_to_assignment1": true,
@@ -167,6 +191,12 @@
       "kind": "dense-uniform",
       "n": 3000,
       "sha256": "247553c36521e220b838339c4fd7dd38b0dcf7471c99c0b979ea62d27e38f82a"
+    },
+    "B_n32.bin": {
+      "bytes": 8192,
+      "kind": "dense-uniform",
+      "n": 32,
+      "sha256": "8e298124d48a12f5eba9a74ccb5e29217c283b654c5fb9b27ce02c5b050a291a"
     },
     "B_n4000.bin": {
       "bytes": 128000000,
@@ -199,6 +229,12 @@
       "kind": "dense-uniform",
       "n": 6000,
       "sha256": "234871746b64d0a394d76aafefb57ce11ec6704ce9abb4212f3004f18c45c352"
+    },
+    "B_n64.bin": {
+      "bytes": 32768,
+      "kind": "dense-uniform",
+      "n": 64,
+      "sha256": "1437e8793eb45a3252cc5bca268f7bd068c0b5b385baf50a32a5181b8b25d1e3"
     },
     "B_n750.bin": {
       "bytes": 4500000,

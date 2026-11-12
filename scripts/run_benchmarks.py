@@ -3,7 +3,7 @@
 One process per configuration (method, n, threads), warm-up + measured samples, 120 s / 4 GiB budgets, a pause
 between processes, a seeded random order of the configurations of each size, and validation of every product
 against NumPy (tolerance 2*gamma_n) plus a SHA-256 of C to check bit-for-bit equality with the sequential baseline.
-Campaigns: pilot, quick, main, large, pass2, ijk, bsweep, vec (optional SIMD extension)."""
+Campaigns: pilot, quick, main, large, pass2, ijk, bsweep, vec (optional SIMD extension), small (added after the main campaign)."""
 import os
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")   # NumPy is only used for validation; keep it single-threaded
@@ -59,6 +59,8 @@ CAMPAIGNS = {
                1, 5, 3.0, 1),
     "vec": ([1000, 2000], [cfg(m, p, v) for v in ("scalar", "sse2-vec", "avx2")
                            for m, p in [("seq", 1)] + [("omp", q) for q in (1, 2, 4, 8)]], 1, 5, 3.0, 1),
+    # supplementary, decided after seeing the main results: where does parallelism stop paying off?
+    "small": ([16, 32, 64], [cfg("seq", 1)] + [cfg("omp", p) for p in (1, 2, 4, 8)], 1, 5, 3.0, 1),
 }
 
 RAW_FIELDS = ["campaign", "run_id", "pass", "order", "method", "variant", "numeric_type", "n", "block_size",
